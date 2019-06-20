@@ -1,6 +1,0 @@
-book_filename: "scRNA-seq-course"
-chapter_name: ""
-output_dir: website
-new_session: yes
-rmd_files: ["index.Rmd","02intro.Rmd","03process-raw.Rmd"]
-#rmd_files: ["index.Rmd","02intro.Rmd","03process-raw.Rmd","04exprs-constr.Rmd","05intro-to-R-Bioconductor.Rmd","06intro-TabulaMuris.Rmd","07exprs-overview.Rmd","08biological-analysis.Rmd","09seurat.Rmd","10ideal-scrnaseq-pipeline.Rmd","11advanced.Rmd","12tools.Rmd","13references.Rmd"]
