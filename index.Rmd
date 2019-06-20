@@ -1,0 +1,107 @@
+--- 
+title: "scRNA-seq数据分析"
+author: "<a href='https://github.com/lemonbases'>碱基吃柠檬</a>"
+
+date: "`r Sys.Date()`"
+knit: "bookdown::render_book"
+site: bookdown::bookdown_site
+output: bookdown::gitbook
+documentclass: book
+bibliography: [book.bib]
+biblio-style: apalike
+always_allow_html: yes
+---
+# 说在前面的话
+
+本项目是将github上经典的scRNA-seq分析教程进行汉化，源项目参见[hemberg-lab/scRNA.seq.course](https://github.com/hemberg-lab/scRNA.seq.course)
+
+## 关于本项目
+
+随着技术发展的日新月异，现在对单个细胞进行高通量测序(**scRNA-seq**)获得其全基因组的表达谱数据成为可能。**scRNA-seq**的主要优势是其单细胞水平的分辨率和基因组范围检测能力可以解决其他方法难以解决的问题，比如bulk RNA-seq和RT-qPCR。然而，为了分析scRNA-seq数据，需要新的方法，并且一些针对bulk RNA-seq实验开发的方法的潜在假设也不再适用。
+
+在本课程中，我们将讨论使用scRNA-seq可以解决的一些问题以及可用的计算和统计方法。 本课程通过University of Cambridge的<a href="http://training.csx.cam.ac.uk/bioinformatics/" target="blank">Bioinformatics training unit</a>进行教学，但该页面的材料适用于任何有兴趣了解scRNA-seq数据计算分析的人。 本课程每年讲授两次，每次授课前材料都会更新。
+
+计算工具的数量正在迅速增加，我们正在尽最大努力跟上最新进展。 本课程的主要限制之一是我们倾向使用在**R**中实现且运行速度相当快的工具。 此外，我们还承认某种程度上偏向于我们或我们的朋友和同事开发的方法。
+
+## 视频
+
+该视频于2017年11月录制，当时课程包含的章节少于当前版本。
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/56n77bpjiKo?list=PLEyKDyF1qdOYAhwU71qlrOXYsYHtyIu8n" frameborder="0" allowfullscreen></iframe>
+
+最新课程的直播录制版见[YouTube](https://www.youtube.com/channel/UCsc6r6UKxb2qRcDQPix2L5A)
+
+
+## GitHub
+<a href="https://github.com/hemberg-lab/scRNA.seq.course" target="blank">https://github.com/hemberg-lab/scRNA.seq.course</a>
+
+<a href="https://github.com/lemonbases" target="blank">https://github.com/lemonbases</a>
+
+## Docker 镜像
+
+本课程提供包含所有必须软件的Docker镜像，可通过运行Docker镜像重复本课程的结果。
+
+### 运行镜像
+
+首先确保您的系统上安装了Docker。如果没有，请参照[以下说明](https://docs.docker.com/engine/installation/)进行安装。运行本课程的Docker镜像(使用[最新版](https://quay.io/repository/hemberg-group/scrna-seq-course?tab=tags)而不是**v3.13**)。
+
+```
+docker run -p 8888:8888 -e PASSWORD="jupyter" quay.io/hemberg-group/scrna-seq-course:v3.13
+```
+
+然后按照以下提供的说明操作, 比如:
+```
+要访问NoteBook，在浏览器中打开此文件:
+    file:///home/jovyan/.local/share/jupyter/runtime/nbserver-6-open.html
+或复制粘贴以下网址:
+    http://(a9ee1aad5398 or 127.0.0.1):8888/?token=22debff49d9aae3c50e6b0b5241b47eefb1b8f883fcb7e6d
+```
+
+Jupyter session会在web浏览器中打开(我们推荐使用Chrome浏览器)
+
+#### Windows用户
+
+Windows操作系统中容器的IP地址与`127.0.0.1`(`localhost`)不同。查找IP地址请运行:
+
+```
+docker-machine ip default
+```
+
+### 下载数据或其它文件
+
+请点击`New -> Terminal`打开一个终端，在新的终端窗口运行:
+
+```
+./poststart.sh
+```
+如果您想在Docker镜像外下载数据，您依然可以使用相同`poststart.sh`脚本，但是您需要在您的计算机上安装[AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-bundle.html)。
+
+
+Alternatively, you can browse and download the files in you web-browser by visiting [this link](https://scrnaseq-course.cog.sanger.ac.uk/index.html?prefix=data/)
+
+### RStudio
+
+返回到Jupyter浏览界面，将url中的`tree`更改为`rstudio`。RStudio server会打开课程文件，软件和数据文件夹。
+Now go back to Jupyter browser tab and change word `tree` in the url to `rstudio`. RStudio server will open with all of the course files, software and the data folder available.
+
+## 手动安装
+
+如果您没有使用本课程的Docker镜像，那么为了能够运行本课程所有的代码块，您需要克隆或下载[GitHub仓](https://github.com/hemberg-lab/scRNA.seq.course)，并在`course_files`文件夹中启动R session，然后您还需要手动安装所有必须的软件。
+
+或者您可以只安装感兴趣章节列出的软件。
+
+## 许可
+
+本课程所有资料均遵循**GPL-3**协议。 欢迎任何人浏览材料来学习scRNA-seq数据的分析。 如果您打算将这些材料用于您自己的教学，除了提供合适的引用外，如果您告诉我们，我们将不胜感激。
+
+## 准备知识
+
+本课程面向那些基本熟悉Unix和R脚本语言的人。同时我们还假设您熟悉传统bulk RNA-seq数据的比对和分析，以及常用的计算工具。
+
+我们推荐在参加本课程前参加[Introduction to RNA-seq and ChIP-seq data analysis](http://training.csx.cam.ac.uk/bioinformatics/search) 或者 [Analysis of high-throughput sequencing data with Bioconductor](http://training.csx.cam.ac.uk/bioinformatics/search)
+
+## 联系我们
+
+如果您有任何的关于课程的意见，问题和建议，请联系<a href="mailto:vladimir.yu.kiselev@gmail.com">Vladimir Kiselev</a>.
+
+_译者注_ : 或者在该repo下开个issue进行提问。

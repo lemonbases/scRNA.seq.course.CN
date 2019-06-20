@@ -1,0 +1,435 @@
+---
+# knit: bookdown::preview_chapter
+output: html_document
+---
+
+## Feature Selection
+
+```{r, echo=FALSE}
+library(knitr)
+opts_chunk$set(fig.align = "center")
+```
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(scRNA.seq.funcs)
+library(matrixStats)
+library(M3Drop)
+library(RColorBrewer)
+library(SingleCellExperiment)
+set.seed(1)
+```
+
+Single-cell RNASeq is capable of measuring the expression of many
+thousands of genes in every cell. However, in most situations only a
+portion of those will show a response to the biological condition of
+interest, e.g. differences in cell-type, drivers of differentiation,
+respond to an environmental stimulus. Most genes detected in a scRNASeq
+experiment will only be detected at different levels due to technical
+noise. One consequence of this is that technical noise and batch
+effects can obscure the biological signal of interest.
+
+Thus, it is often advantageous to perform feature selection to remove
+those genes which only exhibit technical noise from downstream analysis.
+Not only does this generally increase the signal:noise ratio in the data;
+it also reduces the computational complexity of analyses, by reducing
+the total amount of data to be processed.
+
+For scRNASeq data, we will be focusing on unsupervised methods of feature
+selection which don't require any a priori information, such as cell-type
+labels or biological group, since they are not available, or may be unreliable,
+for many experiments. In contrast, differential expression (chapter \@ref(dechapter))
+can be considered a form of supervised feature selection since it uses the
+known biological label of each sample to identify features (i.e. genes) which
+are expressed at different levels across groups.
+
+For this section we will continue working with the Deng data. 
+
+```{r}
+deng <- readRDS("data/deng/deng-reads.rds")
+celltype_labs <- colData(deng)$cell_type2
+cell_colors <- brewer.pal(max(3,length(unique(celltype_labs))), "Set3")
+```
+
+Feature selection is performed after QC, however this data has already been QCed so
+we can skip that step here. M3Drop contain two different feature selection methods
+"M3DropFeatureSelection" which is based on a Michaelis-Menten curve and is designed
+for full-transcript single-cell RNA-seq data (such as Smartseq2) and 
+"NBumiFeatureSelectionCombinedDrop" which is based on a negative binomial model and
+is designed for UMI count data. We will demonstrate both on the Deng Smartseq2 data.
+
+M3Drop feature selection is runs direction on a normalized (but not log-transformed) 
+expression matrix. This can be extracted from our SingleCellExperiment object using the 
+command below. 
+
+```{r}
+expr_matrix <- M3Drop::M3DropConvertData(deng)
+```
+
+This function is compatible with most single-cell RNA-seq analysis packages including:
+scater, SingleCellExperiment, monocle, and Seurat. It can also convert an existing 
+expression matrix to the correct form (removing undetected genes & normalizing/delogging) 
+if you specify whether the matrix is raw counts, or log transformed. Check the manual for details:
+
+```{r eval=FALSE}
+?M3Drop::M3DropConvertData
+```
+
+__Exercise 1__: Confirm that the conversion function has removed undetected genes:
+```{r, include=FALSE}
+nrow(counts(deng)) - nrow(expr_matrix)
+summary( rowSums(counts(deng))[! rownames(counts(deng)) %in% rownames(expr_matrix) ] )
+```
+
+### Identifying Genes vs a Null Model
+
+There are two main approaches to unsupervised feature selection. The
+first is to identify genes which behave differently from a null model
+describing just the technical noise expected in the dataset.
+
+If the dataset contains spike-in RNAs they can be used to directly model
+technical noise. However, measurements of spike-ins may not experience
+the same technical noise as endogenous transcripts [(Svensson et al., 2017)](https://www.nature.com/nmeth/journal/v14/n4/full/nmeth.4220.html).
+In addition, scRNASeq experiments often contain only a small number of
+spike-ins which reduces our confidence in fitted model parameters.
+
+#### Highly Variable Genes
+
+The first method proposed to identify features in scRNASeq datasets
+was to identify highly variable genes (HVG). HVG assumes that if genes
+have large differences in expression across cells some of those differences
+are due to biological difference between the cells rather than technical noise.
+However, because of the nature of count data, there is a positive relationship
+between the mean expression of a gene and the variance in the read counts across
+cells. This relationship must be corrected for to properly identify HVGs.
+
+__Exercise 2__
+Using the functions rowMeans and rowVars to plot the relationship between mean expression
+and variance for all genes in this dataset. (Hint: use log="xy" to plot on a log-scale).
+
+```{r, echo=FALSE, fig.width = 8.5, fig.height = 6}
+plot(
+    rowMeans(expr_matrix), 
+    rowVars(expr_matrix), 
+    log="xy", 
+    pch=16,
+    xlab="Mean Expression", 
+    ylab="Variance", 
+    main=""
+)
+```
+A popular method to correct for the relationship between variance and mean expression
+was proposed by [Brennecke et al.](http://www.nature.com/nmeth/journal/v10/n11/full/nmeth.2645.html).
+To use the Brennecke method, we first normalize for library size then calculate
+the mean and the square coefficient of variation (variation divided by
+the squared mean expression). A quadratic curve is fit to the relationship
+between these two variables for the ERCC spike-in, and then a chi-square test is used to find genes
+significantly above the curve. This method is included in the M3Drop package as the
+Brennecke_getVariableGenes(counts, spikes) function. However, this dataset does not contain spike-ins
+so we will use the entire dataset to estimate the technical noise.
+
+In the figure below the red curve
+is the fitted technical noise model and the dashed line is the 95%
+CI. Pink dots are the genes with significant biological variability
+after multiple-testing correction.
+
+```{r, fig.width = 7, fig.height = 6}
+Brennecke_HVG <- BrenneckeGetVariableGenes(
+    expr_matrix,
+    fdr = 0.01,
+    minBiolDisp = 0.5
+)
+```
+
+This function returns a matrix of significant genes as well as their estimated effect size (difference 
+between observed and expected coefficient of variation), and their significance as raw p.values and 
+FDR corrected q.values. For now we will just keep the names of the significant HVG genes.
+
+```{r}
+HVG_genes <- Brennecke_HVG$Gene
+```
+
+__Exercise 3__
+How many genes were signifcant using BrenneckeGetVariableGenes? 
+
+```{r, echo=FALSE, fig.width = 8.5, fig.height = 6}
+length(HVG_genes)
+```
+#### High Dropout Genes
+
+An alternative to finding HVGs is to identify genes with unexpectedly high numbers of zeros.
+The frequency of zeros, known as the "dropout rate", is very closely related to expression level
+in scRNASeq data. Zeros are the dominant feature of single-cell RNASeq data, typically accounting
+for over half of the entries in the final expression matrix. These zeros predominantly result
+from the failure of mRNAs failing to be reversed transcribed [(Andrews and Hemberg, 2016)](http://www.biorxiv.org/content/early/2017/05/25/065094). Reverse transcription
+is an enzyme reaction thus can be modelled using the Michaelis-Menten equation:
+
+$$P_{dropout} = 1 - S/(K + S)$$
+
+where $S$ is the mRNA concentration in the cell (we will estimate this as average expression)
+and $K$ is the Michaelis-Menten constant.
+
+Because the Michaelis-Menten equation is a convex non-linear function, genes which are
+differentially expression across two or more populations of cells in our dataset will
+be shifted up/right of the Michaelis-Menten model (see Figure below).
+
+```{r, fig.width = 8.5, fig.height = 6, echo=TRUE}
+K <- 49
+S_sim <- 10^seq(from = -3, to = 4, by = 0.05) # range of expression values
+MM <- 1 - S_sim / (K + S_sim)
+plot(
+    S_sim, 
+    MM, 
+    type = "l", 
+    lwd = 3, 
+    xlab = "Expression", 
+    ylab = "Dropout Rate", 
+    xlim = c(1,1000)
+)
+S1 <- 10 # Mean expression in population 1
+P1 <- 1 - S1 / (K + S1) # Dropouts for cells in condition 1
+S2 <- 750 # Mean expression in population 2
+P2 <- 1 - S2 / (K + S2) # Dropouts for cells in condition 2
+points(
+    c(S1, S2),
+    c(P1, P2), 
+    pch = 16, 
+    col = "grey85", 
+    cex = 3
+)
+mix <- 0.5 # proportion of cells in condition 1
+points(
+    S1 * mix + S2 * (1 - mix), 
+    P1 * mix + P2 * (1 - mix), 
+    pch = 16, 
+    col = "grey35", 
+    cex = 3
+)
+```
+__Note__: add `log="x"` to the `plot` call above to see how this looks on the log scale, which is used in M3Drop figures.
+
+__Exercise 4__: Produce the same plot as above with different expression levels (S1 & S2) and/or mixtures (mix).
+
+```{r, include=FALSE}
+plot(
+    S_sim, 
+    MM, 
+    type = "l", 
+    lwd = 3, 
+    xlab = "Expression", 
+    ylab = "Dropout Rate", 
+    xlim = c(1, 1000), 
+    log = "x"
+)
+S1 <- 100
+P1 <- 1 - S1 / (K + S1) # Expression & dropouts for cells in condition 1
+S2 <- 1000
+P2 <- 1 - S2 / (K + S2) # Expression & dropouts for cells in condition 2
+points(
+    c(S1, S2),
+    c(P1, P2), 
+    pch = 16, 
+    col = "grey85", 
+    cex = 3
+)
+mix <- 0.75 # proportion of cells in condition 1
+points(
+    S1 * mix + S2 * (1 - mix), 
+    P1 * mix + P2 * (1 - mix), 
+    pch = 16, 
+    col = "grey35", 
+    cex = 3
+)
+```
+We use M3Drop to identify significant outliers to the right of the MM
+curve. We also apply 1% FDR multiple testing correction:
+
+```{r, fig.width = 7, fig.height = 6}
+M3Drop_genes <- M3DropFeatureSelection(
+    expr_matrix,
+    mt_method = "fdr",
+    mt_threshold = 0.01
+)
+M3Drop_genes <- M3Drop_genes$Gene
+```
+
+An alternative method is contained in the M3Drop package that is tailored specifically for
+UMI-tagged data which generally contains many zeros resulting from low sequencing coverage
+in addition to those resulting from insufficient reverse-transcription. This model is the
+Depth-Adjusted Negative Binomial (DANB). This method describes each expression observation
+as a negative binomial model with a mean related to both the mean expression of the
+respective gene and the sequencing depth of the respective cell, and a variance related to
+the mean-expression of the gene. 
+
+This method is designed to model the raw counts in a dataset directly, and we can extract
+the appropriate matrix using the "NBumiConvertData" function similar to M3Drop. However,
+we have an extra step for fitting the model since that is the slowest step of the method
+and we are currently working on additional methods that can use this model information
+for other things (such as normalization, co-expression testing, highly variable gene
+detection).
+
+This method includes a binomial test of the significance of each feature, but since
+the Deng data is not UMI counts the model does not fit the noise sufficiently and 
+far too many genes will be called as significant. Thus we will take the top 1500
+by effect size.
+
+```{r, fig.width=8, fig.height=5}
+deng_int <- NBumiConvertData(deng)
+DANB_fit <- NBumiFitModel(deng_int) # DANB is fit to the raw count matrix
+# Perform DANB feature selection
+DropFS <- NBumiFeatureSelectionCombinedDrop(DANB_fit, method="fdr", qval.thresh=0.01, suppress.plot=FALSE)
+DANB_genes <- DropFS[1:1500,]$Gene
+```
+__Exercise 5__
+How many genes were signifcant using NBumiFeatureSelectionCombinedDrop? 
+
+```{r, echo=FALSE, fig.width = 8.5, fig.height = 6}
+nrow(DropFS)
+```
+
+### Correlated Expression
+
+A completely different approach to feature selection is to use gene-gene correlations. This method
+is based on the idea that multiple genes will be differentially expressed between different cell-types
+or cell-states. Genes which are expressed in the same cell-population will be positively correlated
+with each other where as genes expressed in different cell-populations will be negatively correated with
+each other. Thus important genes can be identified by the magnitude of their correlation
+with other genes.
+
+The limitation of this method is that it assumes technical noise is random and independent for each cell,
+thus shouldn't produce gene-gene correlations, but this assumption is violated by batch effects which are
+generally systematic between different experimental batches and will produce gene-gene correlations. As a
+result it is more appropriate to take the top few thousand genes as ranked by gene-gene correlation than
+consider the significance of the correlations.
+
+
+```{r, eval=FALSE}
+cor_feat <- M3Drop::corFS(expr_matrix)
+Cor_genes <- names(cor_feat)[1:1500]
+```
+
+Lastly, another common method for feature selection in scRNASeq data is to use PCA loadings. Genes with
+high PCA loadings are likely to be highly variable and correlated with many other variable genes, thus
+may be relevant to the underlying biology. However, as with gene-gene correlations PCA loadings tend to
+be susceptible to detecting systematic variation due to batch effects; thus it is recommended to plot the PCA
+results to determine those components corresponding to the biological variation rather than batch effects.
+
+```{r, fig.width=7, fig.height=6}
+# PCA is typically performed on log-transformed expression data
+pca <- prcomp(log(expr_matrix + 1) / log(2))
+
+# plot projection
+plot(
+    pca$rotation[,1], 
+    pca$rotation[,2], 
+    pch = 16, 
+    col = cell_colors[as.factor(celltype_labs)]
+) 
+# calculate loadings for components 1 and 2
+score <- rowSums(abs(pca$x[,c(1,2)])) 
+names(score) <- rownames(expr_matrix)
+score <- score[order(-score)]
+PCA_genes <- names(score[1:1500])
+```
+__Exercise 6__
+Consider the top 5 principal components. Which appear to be most biologically relevant? How does the top 1,500
+features change if you consider the loadings for those components?
+```{r, include=FALSE}
+plot(
+    pca$rotation[,2], 
+    pca$rotation[,3], 
+    pch = 16, 
+    col = cell_colors[as.factor(celltype_labs)]
+)
+plot(
+    pca$rotation[,3], 
+    pca$rotation[,4], 
+    pch = 16, 
+    col = cell_colors[as.factor(celltype_labs)]
+)
+# calculate loadings for components 1 and 2
+score <- rowSums(abs(pca$x[,c(2, 3, 4)]))
+names(score) <- rownames(expr_matrix)
+score <- score[order(-score)]
+PCA_genes2 = names(score[1:1500])
+```
+### Comparing Methods
+
+We can check whether the identified features really do represent genes differentially expressed between
+cell-types in this dataset.
+
+```{r, fig.width = 7, fig.height = 10}
+M3DropExpressionHeatmap(
+    M3Drop_genes,
+    expr_matrix,
+    cell_labels = celltype_labs
+)
+```
+
+We can also consider how consistent each feature selection method is with the others using the Jaccard Index:
+```{r}
+J <- sum(M3Drop_genes %in% HVG_genes)/length(unique(c(M3Drop_genes, HVG_genes)))
+```
+
+__Exercise 7__
+
+Plot the expression of the features for each of the other methods. Which appear to be differentially expressed? How consistent are the different methods for this dataset?
+
+```{r, eval=FALSE, include=FALSE, fig.width = 7, fig.height = 10}
+M3DropExpressionHeatmap(
+    HVG_genes,
+    expr_matrix,
+    cell_labels = celltype_labs
+)
+```
+
+```{r, eval=FALSE, include=FALSE, fig.width = 7, fig.height = 10}
+M3DropExpressionHeatmap(
+    Cor_genes,
+    expr_matrix,
+    cell_labels = celltype_labs
+)
+```
+
+```{r, eval=FALSE, include=FALSE, fig.width = 7, fig.height = 10}
+M3DropExpressionHeatmap(
+    PCA_genes,
+    expr_matrix,
+    cell_labels = celltype_labs
+)
+```
+
+```{r, eval=FALSE, include=FALSE, fig.width = 7, fig.height = 10}
+M3DropExpressionHeatmap(
+    PCA_genes2,
+    expr_matrix,
+    cell_labels = celltype_labs
+)
+```
+
+```{r, eval=FALSE, include=FALSE}
+list_of_features <- list(
+    M3Drop_genes, 
+    HVG_genes, 
+    Cor_genes, 
+    PCA_genes, 
+    PCA_genes2
+)
+Out <- matrix(
+    0, 
+    ncol = length(list_of_features), 
+    nrow = length(list_of_features)
+)
+for(i in 1:length(list_of_features) ) {
+    for(j in 1:length(list_of_features) ) {
+        Out[i,j] <- sum(list_of_features[[i]] %in% list_of_features[[j]])/
+            length(unique(c(list_of_features[[i]], list_of_features[[j]])))
+     }
+}
+colnames(Out) <- rownames(Out) <- c("M3Drop", "HVG", "Cor", "PCA", "PCA2")
+```
+
+
+### sessionInfo()
+
+```{r echo=FALSE}
+sessionInfo()
+```
