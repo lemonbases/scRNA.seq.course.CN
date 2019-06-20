@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1561040288972.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2323840014",
+    "id" : "7DD9252E",
+    "lastKnownWriteTime" : 1561040323,
+    "last_content_update" : 1561040323264,
+    "path" : "E:/学习/写作/bookdown/scRNA.seq.course.CN/02intro.Rmd",
+    "project_path" : "02intro.Rmd",
+    "properties" : {
+        "cursorPosition" : "124,290",
+        "scrollLine" : "116"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
