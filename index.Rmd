@@ -9,6 +9,7 @@ output: bookdown::gitbook
 documentclass: book
 bibliography: [book.bib]
 biblio-style: apalike
+link-citations: true
 always_allow_html: yes
 ---
 # 说在前面的话

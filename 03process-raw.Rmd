@@ -6,7 +6,7 @@ output: html_document
 library('bookdown')
 ```
 
-# Processing Raw scRNA-seq Data
+# scRNA-seq原始数据处理 {#processing_raw_scrna_seq_data}
 
 ## FastQC
 

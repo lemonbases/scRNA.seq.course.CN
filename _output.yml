@@ -10,7 +10,10 @@ bookdown::gitbook:
       after: |
         <li><a href="https://github.com/lemonbases/scRNA.seq.course.CN" target="blank">碱基吃柠檬</a></li>
     download: [pdf]
+    edit: https://github.com/lemonbases/scRNA.seq.course.CN/edit/master/%s
     search: true
+    sharing:
+      weibo: yes
 bookdown::tufte_html_book:
   css: [style.css, toc.css]
 bookdown::pdf_book:
