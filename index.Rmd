@@ -83,7 +83,6 @@ Alternatively, you can browse and download the files in you web-browser by visit
 ### RStudio
 
 返回到Jupyter浏览界面，将url中的`tree`更改为`rstudio`。RStudio server会打开课程文件，软件和数据文件夹。
-Now go back to Jupyter browser tab and change word `tree` in the url to `rstudio`. RStudio server will open with all of the course files, software and the data folder available.
 
 ## 手动安装
 
