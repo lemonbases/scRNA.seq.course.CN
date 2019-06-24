@@ -28,14 +28,11 @@ knitr::include_graphics("figures/per_base_quality.png")
 
 另外，使用[Integrative Genomics Browser (IGV)](https://www.broadinstitute.org/igv/)或者[SeqMonk](http://www.bioinformatics.babraham.ac.uk/projects/seqmonk/)对数据进行可视化非常有帮助。
 
-## Reads alignment
+## Reads 比对
 
-After trimming low quality bases from the reads, the remaining sequences can
-be mapped to a reference genome. Again, there is no need for a special purpose
-method for this, so we can use the
-[STAR](https://github.com/alexdobin/STAR) or the [TopHat](https://ccb.jhu.edu/software/tophat/index.shtml) aligner. For large full-transcript datasets from well annotated organisms (e.g. mouse, human) pseudo-alignment methods (e.g. [Kallisto](https://pachterlab.github.io/kallisto/), [Salmon](http://salmon.readthedocs.io/en/latest/salmon.html)) may out-perform conventional alignment. For drop-seq based datasets with tens- or hundreds of thousands of reads pseudoaligners become more appealing since their run-time can be several orders of magnitude less than traditional aligners.
+将reads低质量碱基取出后，把剩下的序列比对到参考基因组上。同样，没有专门为scRNA-seq设计的比对方法。我们可以使用[STAR](https://github.com/alexdobin/STAR)或者[TopHat](https://ccb.jhu.edu/software/tophat/index.shtml)进行比对。对来自有丰富注释信息模式生物(比如小鼠和人)的大型全长转录本数据集，pseudo-alignment方法(比如[Kallisto](https://pachterlab.github.io/kallisto/)，[Salmon](http://salmon.readthedocs.io/en/latest/salmon.html))可能比传统比对方法表现更好。基于drop-seq数据集包含数十万reads，pseudoaligners运行时间比传统比对工具快不止一个量级。
 
-An example of how to map reads.bam to using STAR is
+使用STAR比对示例
 
 ```
 $<path_to_STAR>/STAR --runThreadN 1 --runMode alignReads
@@ -43,35 +40,21 @@ $<path_to_STAR>/STAR --runThreadN 1 --runMode alignReads
 --parametersFiles FileOfMoreParameters.txt --outFileNamePrefix <outpath>/output
 ```
 
-__Note__, if the _spike-ins_ are used, the reference sequence should be augmented with the DNA sequence of the _spike-in_ molecules prior to mapping.
+**注意**, 如果使用了**spike-ins**, 在比对前应将**spike-ins**的DNA序列添加到参考基因组序列中.
 
-__Note__, when UMIs are used, their barcodes should be removed from the read sequence. A common practice is to add the barcode to the read name.
+**注意**, 当使用UMIs，应该从read序列中取出条形码序列。通常做法是将barcode加到read名称上。
 
-Once the reads for each cell have been mapped to the reference genome,
-we need to make sure that a sufficient number of reads from each cell
-could be mapped to the reference genome. In our experience, the
-fraction of mappable reads for mouse or human cells is 60-70%. However, 
-this result may vary depending on protocol, read length and settings for 
-the read alignment. As a general rule, we expect all cells to have a similar
-fraction of mapped reads, so any outliers should be inspected and
-possibly removed. A low proportion of mappable reads usually indicates contamination.
+一旦将每个细胞的reads比对到参考基因组，我们需要确保每个细胞有足够数量的read比对到参考基因组。 根据我们的经验，小鼠或人类细胞的reads的map率为60-70％。但是此结果可能会因protocols，read长度和read比对工具参数而异。一般来说，我们希望所有细胞都具有相似的map率，因此应检查并可能删除任何异常值，map率低通常表示污染。
 
-An example of how to quantify expression using Salmon is
+使用Salmon定量基因表达：
 ```
 $<path_to_Salmon>/salmon quant -i salmon_transcript_index -1 reads1.fq.gz -2 reads2.fq.gz -p #threads -l A -g genome.gtf --seqBias --gcBias --posBias
 ```
-__Note__ Salmon produces estimated read counts and estimated transcripts per million (tpm) in our experience the latter over corrects the expression of long genes for scRNASeq, thus we recommend using read counts. 
+**注意**：Salmon或得到估计read counts和估计transcripts per million(tpm), TMP对scRNA-seq长基因的表达进行了过度校正，因此我们建议使用read counts。
 
-## Alignment example
+## 比对示例
 
-The histogram below shows the total number of reads mapped to each
-cell for an scRNA-seq experiment. Each bar represents one cell, and
-they have been sorted in ascending order by the total number of reads
-per cell. The three red arrows indicate cells that are outliers in
-terms of their coverage and they should be removed from further
-analysis. The two yellow arrows point to cells with a surprisingly
-large number of unmapped reads. In this example we kept the cells during the alignment QC step, but they were later removed during 
-cell QC due to a high proportion of ribosomal RNA reads. 
+下列直方图显示scRNA-seq实验每个细胞比对reads总数。每个条形代表一个细胞，按照每个细胞的总reads数升序排列。三个红色箭头表示比对覆盖率降低的异常细胞，应该在后续分析中将其去除。黄色箭头表示unmapped reads较多的细胞。在比对质控步骤我们保留这两个细胞，但是在细胞质控时由于高的核糖体RNA reads比例将其移除。
 
 ```{r exprs-constr-total-num-cells, out.width = '90%', fig.cap="Example of the total number of reads mapped to each cell."}
 knitr::include_graphics("figures/Bergiers_exp1_mapping_by_cell.png")
@@ -79,7 +62,7 @@ knitr::include_graphics("figures/Bergiers_exp1_mapping_by_cell.png")
 
 ## Mapping QC
 
-After mapping the raw sequencing to the genome we need to evaluate the quality of the mapping. There are many ways to measure the mapping quality, including: amount of reads mapping to rRNA/tRNAs, proportion of uniquely mapping reads, reads mapping across splice junctions, read depth along the transcripts. Methods developed for bulk RNA-seq, such as [RSeQC](http://rseqc.sourceforge.net/), are applicable to single-cell data:
+将原始测序数据比对到基因组后，需要评估比对的质量。目前有很多方法对比对质量进行评估，包括：rRNA/tRNAs reads数目，uniquely mapping reads比例，跨剪切位点的reads数，转录本read深度。为bulk RNA-seq开发的方法，比如[RSeQC](http://rseqc.sourceforge.net/)也适合单细胞数据：
 
 ```
 python <RSeQCpath>/geneBody_coverage.py -i input.bam -r genome.bed -o output.txt
@@ -87,17 +70,15 @@ python <RSeQCpath>/bam_stat.py -i input.bam -r genome.bed -o output.txt
 python <RSeQCpath>/split_bam.py -i input.bam -r rRNAmask.bed -o output.txt
 ```
 
-However the expected results will depend on the experimental protocol, e.g. many scRNA-seq methods use poly-A selection to avoid sequencing rRNAs which results in a 3' bias in the read coverage across the genes (aka gene body coverage). The figure below shows this 3' bias as well as three cells which were outliers and removed from the dataset:
+然而预期结果依赖于实验protocol，比如很多scRNA-seq方法是用poly-A富集来排除rRNA，但导致read覆盖率具有3'偏好性，即基因的3'区域更容易被检测到。下图展示了测序reads的3'偏好性，以及3个从数据集中移除的异常细胞。
 
 ```{r exprs-constr-3-bias, out.width = '90%', fig.cap="Example of the 3' bias in the read coverage."}
 knitr::include_graphics("figures/Exp1_RSEQC_geneBodyCoverage_plot_Combined.png")
 ```
 
-## Reads quantification
+## Reads定量
 
-The next step is to quantify the expression level of each gene for
-each cell. For mRNA data, we can use one of the tools which has been
-developed for bulk RNA-seq data, e.g. [HT-seq](http://www-huber.embl.de/users/anders/HTSeq/) or [FeatureCounts](http://subread.sourceforge.net/)
+下一步是定量每个细胞的基因表达水平。对于mRNA数据，可以使用针对bulk RNA-seq开发的工具，比如[HT-seq](http://www-huber.embl.de/users/anders/HTSeq/) 或者[FeatureCounts](http://subread.sourceforge.net/)
 
 ```
 # include multimapping
@@ -106,30 +87,30 @@ developed for bulk RNA-seq data, e.g. [HT-seq](http://www-huber.embl.de/users/an
 <featureCounts_path>/featureCounts -Q 30 -p -a genome.gtf -o outputfile input.bam
 ```
 
-[Unique molecular identifiers (UMIs)](http://www.nature.com/nmeth/journal/v9/n1/full/nmeth.1778.html) make it possible to count the absolute number of molecules and they have proven popular for [scRNA-seq](http://www.nature.com/nmeth/journal/v11/n2/full/nmeth.2772.html). We will discuss how UMIs can be processed in the next chapter.
+[Unique molecular identifiers (UMIs)](http://www.nature.com/nmeth/journal/v9/n1/full/nmeth.1778.html) 使得计算分子的绝对数目成为可能，并且在[scRNA-seq](http://www.nature.com/nmeth/journal/v11/n2/full/nmeth.2772.html)非常受欢迎。下一章将讨论如何处理UMIs。
 
 ```{r, echo=FALSE}
 library(knitr)
 opts_chunk$set(fig.align = "center", echo=FALSE)
 ```
 
-## Unique Molecular Identifiers (UMIs) {#umichapter}
+## 唯一分子标识符
 
-Thanks to Andreas Buness from [EMBL Monterotondo](https://www.embl.it/services/bioinformatics/) for collaboration on this section.
+感谢来 [EMBL Monterotondo](https://www.embl.it/services/bioinformatics/)的Andreas Buness在本节的合作。
 
-### Introduction
+### UMI介绍
 
-Unique Molecular Identifiers are short (4-10bp) random barcodes added to transcripts during reverse-transcription. They enable sequencing reads to be assigned to individual transcript molecules and thus the removal of amplification noise and biases from scRNASeq data. 
+UMI是在反转录过程中添加到转录本中的短（4-10bp）随机条形码序列。它们使测序read能够对应到单个转录物，从而去除scRNA-Seq数据扩增噪声和偏差。
 
 ```{r intro-umi-protocol, out.width = '90%', fig.cap="UMI sequencing protocol"}
 knitr::include_graphics("figures/UMI-Seq-protocol.png")
 ```
 
-When sequencing UMI containing data, techniques are used to specifically sequence only the end of the transcript containing the UMI (usually the 3' end).
+当对包含UMI数据测序时，仅对包含UMI的转录本末端进行测序（通常是3'末端）
 
-### Mapping Barcodes
+### 比对条形码序列
 
-Since the number of unique barcodes ($4^N$, where $N$ is the length of UMI) is much smaller than the total number of molecules per cell (~$10^6$), each barcode will typically be assigned to multiple transcripts. Hence, to identify unique molecules both barcode and mapping location (transcript) must be used. The first step is to map UMI reads, for which we recommend using STAR since it is fast and outputs good quality BAM-alignments. Moreover, mapping locations can be useful for eg. identifying poorly-annotated 3' UTRs of transcripts.
+由于条形码数量($4^N$,$N$为UMI的长度)比细胞中RNA分子(~$10^6$)数目多，每个barcode通常会连接多个转录本。因此需要barcode和转录本比对位置来鉴定转录本分子。第一步比对UMI reads，推荐使用STAR，因为其运行速度快并且输出高质量BAM比对。此外，比对位置对鉴定转录本新的3'UTR很有帮助。
 
 UMI-sequencing typically consists of paired-end reads where one read from each pair captures the cell and UMI barcodes while the other read consists of exonic sequence from the transcript (Figure \@ref(fig:intro-umi-reads)). Note that trimming and/or filtering to remove reads containing poly-A sequence is recommended to avoid erors due to these read mapping to genes/transcripts with internal poly-A/poly-T sequences.
 
