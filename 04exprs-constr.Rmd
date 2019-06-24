@@ -2,31 +2,31 @@
 output: html_document
 ---
 
-# Construction of expression matrix
+# 构建表达矩阵 {#construction_of_expression_matrix}
 
 ```{r, echo=FALSE,warning=FALSE}
 library(knitr)
 opts_chunk$set(fig.align = "center", echo=FALSE)
 ```
 
-Many analyses of scRNA-seq data take as their starting point an __expression matrix__. By convention, the each row of the expression matrix represents a gene and each column represents a cell (although some authors use the transpose). Each entry represents the expression level of a particular gene in a given cell. The units by which the expression is meassured depends on the protocol and the normalization strategy used.
+很多scRNA-seq数据分析从**表达矩**为开始。 一般来说，表达矩阵的每一行代表一个基因，每列代表一个细胞（但是一些作者会使用转置）。 每个条目代表特定基因在特定细胞的表达水平。表达量的单位取决于protocol和标准化方法。
 
-## Reads QC
+## 质量控制
 
-The output from a scRNA-seq experiment is a large collection of cDNA reads. The first step is to ensure that the reads are of high quality. The quality control can be performed by using standard tools, such as [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) or [Kraken](http://www.ebi.ac.uk/research/enright/software/kraken). 
+scRNA-seq实验测序结果是大量的cDNA reads。第一步是确保测序的高质量，可以使用以下标准工具执行质量控制，例如 [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) 或 [Kraken](http://www.ebi.ac.uk/research/enright/software/kraken). 
 
-Assuming that our reads are in experiment.bam, we run FastQC as
+假设有experiment.bam文件,运行以下FASTQC命令
 ```
 $<path_to_fastQC>/fastQC experiment.bam
 ```
 
-Below is an example of the output from FastQC for a dataset of 125 bp reads. The plot reveals a technical error which resulted in a couple of bases failing to be read correctly in the centre of the read. However, since the rest of the read was of high quality this error will most likely have a negligible effect on mapping efficiency.
+下面是125 bp reads数据集的FastQC输出结果示例。下图显示了由于技术错误导致在read中心无法正确测序几个碱基。 但是，由于read的其余部分质量很高，因此该错误很可能对比对效率的影响可以忽略不计。
 
 ```{r exprs-constr-fastqc, out.width = '90%', fig.cap="Example of FastQC output"}
 knitr::include_graphics("figures/per_base_quality.png")
 ```
 
-Additionally, it is often helpful to visualize the data using the [Integrative Genomics Browser (IGV)](https://www.broadinstitute.org/igv/) or [SeqMonk](http://www.bioinformatics.babraham.ac.uk/projects/seqmonk/).
+另外，使用[Integrative Genomics Browser (IGV)](https://www.broadinstitute.org/igv/)或者[SeqMonk](http://www.bioinformatics.babraham.ac.uk/projects/seqmonk/)对数据进行可视化非常有帮助。
 
 ## Reads alignment
 
