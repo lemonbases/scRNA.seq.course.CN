@@ -46,34 +46,34 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("edgeR")
 ```
 
-Note: in some situations it is necessary to substitute "http://" for "https://" in the above depending on the security features of your internet connection/network. 
+注意: 某些情况下有必要将上述的"http://" 替换为 "https://" ,这取决于网络连接的安全属性。
 
-Bioconductor also requires creators to support their packages and has a regular 6-month release schedule. Make sure you are using the most recent release of bioconductor before trying to install packages for the course.
+Bioconductor还要求作者维护他们的R包，并定期6个月发布更新。 在尝试安装课程所需R包之前，请确保使用最新版本的bioconductor。
 
 ```{r, eval=FALSE}
 source("https://bioconductor.org/biocLite.R")
 biocLite("BiocUpgrade")
 ```
 
-### Source
-The final way to install packages is directly from source. In this case you have to download a fully built source code file, usually packagename.tar.gz, or clone the github repository and rebuild the package yourself. Generally this will only be done if you want to edit a package yourself, or if for some reason the former methods have failed.
+### 源码安装
+安装包的最后一种方法是直接从源码安装。 在这种情况下，必须下载完整构建的源代码文件，通常是packagename.tar.gz，或克隆github仓并重新build软件包。通常，只有在编辑包或者由于某种原因前一种方法失败时才会这样做。
 
 ```{r, eval=FALSE}
 install.packages("M3Drop_3.05.00.tar.gz", type="source")
 ```
 
-## Installation instructions:
-All the packages necessary for this course are available [here](https://github.com/hemberg-lab/scRNA.seq.course/blob/master/Dockerfile). Starting from "RUN Rscript -e "install.packages('devtools')" ", run each of the commands (minus "RUN") on the command line or start an R session and run each of the commands within the quotation marks. Note the ordering of the installation is important in some cases, so make sure you run them in order from top to bottom. 
+## 安装说明:
+本课程所需的所有软件包都可以在[这里](https://github.com/hemberg-lab/scRNA.seq.course/blob/master/Dockerfile)获得。从"RUN Rscript -e "install.packages('devtools')" "开始，在命令行或者R session运行引号内的命令(移除"RUN")。注意，某些情况下安装顺序也很重要，请确保按顺序执行。
 
-## Data-types/classes
+## 数据类型/类
 
-R is a high level language so the underlying data-type is generally not important. The exception if you are accessing R data directly using another language such as C, but that is beyond the scope of this course. Instead we will consider the basic data classes: numeric, integer, logical, and character, and the higher level data class called "factor". You can check what class your data is using the "class()" function.
+R是一种高级语言，因此底层数据类型通常并不重要。 如果您使用其他语言（如C）直接访问R数据，则需要考虑，但这超出了本课程的范围。 相反，我们将考虑基本数据类型：数值(numeric)，整数(integer)，逻辑(logical)和字符(character)，以及高级数据类“因子”。 使用“class（）”函数检查数据的类型。
 
-Aside: R can also store data as "complex" for complex numbers but generally this isn't relevant for biological analyses.
+除此之外：R还可以将数据存储为“复数(complex)”，但通常这与生物分析无关。
 
-### Numeric
+### 数值
 
-The "numeric" class is the default class for storing any numeric data - integers, decimal numbers, numbers in scientific notation, etc... 
+“数值”类型是存储任何数值数据的默认类 - 整数，十进制数，科学计数法中的数字等...
 
 ```{r}
 x = 1.141
@@ -84,25 +84,25 @@ z = 6.02e23
 class(z)
 ```
 
-Here we see that even though R has an "integer" class and 42 could be stored more efficiently as an integer the default is to store it as "numeric". If we want 42 to be stored as an integer we must "coerce" it to that class:
+即使R有一个“整数”类型，42可以更有效地存储为整数，默认是将其存储为“数值”类型。 如果我们想要将42存储为整数，我们必须`强制`类型转换：
 
 ```{r}
 y = as.integer(42)
 class(y)
 ```
 
-
-Coercion will force R to store data as a particular class, if our data is incompatible with that class it will still do it but the data will be converted to NAs:
+强制R将数据存储为特定类，如果我们的数据与该类不兼容，它仍将执行此操作，但数据将转换为NA：
 
 ```{r}
 as.numeric("H")
 ```
 
-Above we tried to coerce "character" data, identified by the double quotation marks, into numeric data which doesn't make sense, so we triggered ("threw") an warning message. Since this is only a warning R would continue with any subsequent commands in a script/function, whereas an "error" would cause R to halt. 
+上述将“字符”数据强制转换为无意义的数值，因此触发（“抛出”）警告消息。 由于这只是一个警告信息，R将继续执行脚本/函数中的后续命令，而“错误”将导致R停止执行。
 
-### Character/String
+### 字符/字符串
 
-The "character" class stores all kinds of text data. Programing convention calls data containing multiple letters a "string", thus most R functions which act on character data will refer to the data as "strings" and will often have "str" or "string" in it's name. Strings are identified by being flanked by double quotation marks, whereas variable/function names are not:
+“character”类型存储各种文本数据。 编程约定将包含多个字母的数据称为“字符串”，因此大多数作用于字符数据的R函数将数据称为“字符串”，并且通常在其名称中包含“str”或“string”。字符串通过双引号标识，而变量/函数名称则不是：
+
 ```{r}
 x = 5
 
