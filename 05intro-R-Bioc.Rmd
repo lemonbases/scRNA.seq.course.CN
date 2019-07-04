@@ -113,7 +113,8 @@ b = x # variable x
 b
 ```
 
-In addition to standard alphanumeric characters, strings can also store various special characters. Special characters are identified using a backlash followed by a single character, the most relevant are the special character for tab : `\t` and new line : `\n`. To demonstrate the these special characters lets concatenate (cat) together two strings with these characters separating (sep) them:
+除了标准的字母数字字符外，字符串还可以存储各种特殊字符。 特殊字符后跟单个字符进行标识，最常见的是tab的特殊字符：`\t`和换行符：`\n`。 为了演示这些特殊字符，用特殊字符将两个字符串连接起来：
+
 ```{r}
 cat("Hello", "World", sep= " ")
 
@@ -121,7 +122,7 @@ cat("Hello", "World", sep= "\t")
 
 cat("Hello", "World", sep= "\n")
 ```
-Note that special characters work differently in different functions. For instance the `paste` function does the same thing as `cat` but does not recognize special characters.
+注意：特殊字符在不同函数中工作方式不同。比如`paste`函数和`cat`函数功能相同，但是不识别特殊字符。
 
 ```{r}
 paste("Hello", "World", sep= " ")
@@ -131,18 +132,19 @@ paste("Hello", "World", sep= "\t")
 paste("Hello", "World", sep= "\n")
 ```
 
-Single or double backslash is also used as an `escape` character to turn off special characters or allow quotation marks to be included in strings:
+单反斜杠或双反斜杠也用作`转义`字符来关闭特殊字符功能或允许引号包含在字符串中：
 
 ```{r}
 cat("This \"string\" contains quotation marks.")
 ```
 
-Special characters are generally only used in pattern matching, and reading/writing data to files. For instance this is how you would read a tab-separated file into R.
+特殊字符通常仅用于模式匹配，以及将数据读取/写入文件 例如，将tab分隔文件读入R。
+
 ```{r, eval=FALSE}
 dat = read.delim("file.tsv", sep="\t")
 ```
 
-Another special type of character data are colours. Colours can be specified in three main ways: by name from those [available](http://bxhorn.com/r-color-tables/), by red, green, blue values using the `rgb` function, and by hue (colour), saturation (colour vs white) and value (colour/white vs black) using the `hsv` function. By default rgb and hsv expect three values in 0-1 with an optional fourth value for transparency. Alternatively, sets of predetermined colours with useful properties can be loaded from many different packages with [RColorBrewer](http://colorbrewer2.org/) being one of the most popular.
+另一种特殊类型的字符数据是颜色。 颜色可以通过三种主要方式指定：[名字](http://bxhorn.com/r-color-tables/)，使用`rgb`功能的红色，绿色，蓝色值以及使用`hsv`函数的色调，饱和度和亮度。 默认情况下，rgb和hsvs三个值在0-1之间，透明度可选的第四个值。或者，可以从许多不同的包中加载预定颜色组，其中[RColorBrewer](http://colorbrewer2.org/)是最受欢迎的一种。
 
 ```{r}
 reds = c("red", rgb(1,0,0), hsv(0, 1, 1))
@@ -150,9 +152,9 @@ reds
 barplot(c(1,1,1), col=reds, names=c("by_name", "by_rgb", "by_hsv"))
 ```
 
-### Logical
+### 逻辑值
 
-The `logical` class stores boolean truth values, i.e. TRUE and FALSE. It is used for storing the results of logical operations and conditional statements will be coerced to this class. Most other data-types can be coerced to boolean without triggering (or "throwing") error messages, which may cause unexpected behaviour.
+`logical`类型存储布尔值，即TRUE和FALSE。它用于存储逻辑运算的结果，条件语句将被强制转换为此类。 大多数其他数据类型可以强制转换为布尔值而不会触发（或“抛出”）错误消息，但这可能会导致意料之外的情况。
 
 ```{r}
 x = TRUE
@@ -173,13 +175,13 @@ as.logical(y)
 z = 0
 as.logical(z)
 ```
-__Exercise 1__
-Experiment with other character and numeric values, which are coerced to TRUE or FALSE? which are coerced to neither? 
-Do you ever throw a warning/error message?
+**练习1**
+试验其他字符和数值，其中哪些被强制为TRUE或FALSE？哪些都不是？
+有没有抛出警告/错误信息？
 
-### Factors
+### 因子
 
-String/Character data is very memory inefficient to store, each letter generally requires the same amount of memory as any integer. Thus when storing a vector of strings with repeated elements it is more efficient assign each element to an integer and store the vector as integers and an additional string-to-integer association table. Thus, by default R will read in text columns of a data table as factors. 
+字符串/字符数据存储效率非常低，每个字母通常需要与整数相同的内存。 因此，当存储具有重复元素的字符串向量时，更有效的方式是将每个元素分配给整数，将向量存储为整数和字符串到整数关联表。 因此，默认情况下，R将读取数据表的文本列作为因子。
 
 ```{r}
 str_vector = c("Apple", "Apple", "Banana", "Banana", "Banana", "Carrot", "Carrot", "Apple", "Banana") 
@@ -187,37 +189,37 @@ factored_vector = factor(str_vector)
 factored_vector
 as.numeric(factored_vector)
 ```
-
-The double nature of factors can cause some unintuitive behaviour. E.g. joining two factors together will convert them to the numeric form and the original strings will be lost.
+因子的双重性质可能导致一些不直观的行为。例如，连接两个因子会将它们转换为数字形式，丢失原始字符串。
 
 ```{r}
 c(factored_vector, factored_vector)
 ```
+同样，如果由于格式化问题，数值数据被错误地解释为字符串，那么在强制转换为数值之前必须将因子转换回字符串：
 
-Likewise if due to formatting issues numeric data is mistakenly interpretted as strings, then you must convert the factor back to strings before coercing to numeric values:
 ```{r}
 x = c("20", "25", "23", "38", "20", "40", "25", "30")
 x = factor(x)
 as.numeric(x)
 as.numeric(as.character(x))
 ```
-
-To make R read text as character data instead of factors set the environment option `stringsAsFactors=FALSE`. This must be done at the start of each R session.
+要使R读取文本作为字符数据而不是因子，在每个R会话开始s时，设置环境选项`stringsAsFactors = FALSE`。
 
 ```{r}
 options(stringsAsFactors=FALSE)
 ```
-__Exercise__
-How would you use factors to create a vector of colours for an arbitrarily long vector of fruits like `str_vector` above?
-__Answer__
-```{r, include=FALSE}
+**练习**
+
+使用因子为任意长的水果矢量创建一个颜色矢量，如上面的'str_vector`？
+**答案**
+```{r}
 long_str_vector = c(str_vector, str_vector, str_vector)
 fruit_cols = c("red", "yellow", "orange")
 fruit_colour_vec = fruit_cols[as.numeric(factor(long_str_vector, levels=c("Apple", "Banana", "Carrot")))]
 ```
 
-### Checking class/type
-We recommend checking your data is of the correct class after reading from files:
+### 检查数据类型
+
+建议在读取文件后检查数类型据是否正确：
 
 ```{r}
 x = 1.4
@@ -228,18 +230,19 @@ is.factor(x)
 ```
 
 
-## Basic data structures
-So far we have only looked at single values and vectors. Vectors are the simplest data structure in R. They are a 1-dimensional array of data all of the same type. If the input when creating a vector is of different types it will be coerced to the data-type that is most consistent with the data.
+## 基本数据结构
+
+到目前为止，我们只关注单个值和向量。向量是R中最简单的数据结构。它们是所有相同类型数据的一维数组。 如果创建向量时的输入具有不同类型，则它将被强制转换为与数据最一致的数据类型。
 
 ```{r}
 x = c("Hello", 5, TRUE)
 x
 class(x)
 ```
-Here we tried to put character, numeric and logical data into a single vector so all the values were coerced to `character` data.
+在这里，尝试将字符，数值和逻辑数据放入单个向量中，所有值强制转换为`character`数据。
 
-A `matrix` is the two dimensional version of a vector, it also requires all data to be of the same type. 
-If we combine a character vector and a numeric vector into a matrix, all the data will be coerced to characters:
+`矩阵`是二维向量，它也要求所有数据都是相同的类型。
+如果将字符向量和数字向量组合成矩阵，所有数据都将被强制转换为字符类型：
 
 ```{r}
 x = c("A", "B", "C")
@@ -250,7 +253,7 @@ m = cbind(x, y)
 m
 ```
 
-The quotation marks indicate that the numeric vector has been coerced to characters. Alternatively, to store data with columns of different data-types we can use a dataframe.
+引号表示数字向量已被强制转换为字符类型。或者，使用数据框用不同数据类型的列存储数据。
 
 ```{r}
 z = data.frame(x, y)
@@ -259,7 +262,7 @@ class(z[,1])
 class(z[,2])
 ```
 
-If you have set stringsAsFactors=FALSE as above you will find the first column remains characters, otherwise it will be automatically converted to a factor.
+如果已经设置stringsAsFactors = FALSE，会发现第一列仍然是字类型符，否则它将自动转换为因子。
 
 ```{r}
 options(stringsAsFactors=TRUE)
@@ -267,14 +270,14 @@ z = data.frame(x, y)
 class(z[,1])
 ```
 
-Another difference between matrices and dataframes is the ability to select columns using the `$` operator:
+矩阵和数据框之间的另一个区别是能够使用`$`运算符选择列：
 
 ```{r, eval=FALSE}
 m$x # throws an error
 z$x # ok
 ```
 
-The final basic data structure is the `list`. Lists allow data of different types and different lengths to be stored in a single object. Each element of a list can be any other R object : data of any type, any data structure, even other lists or functions. 
+最后的基本数据结构是`list`。列表允许将不同类型和不同长度的数据存储在单个对象中。 列表的每个元素可以是任何其他R对象：任何类型的数据，任何数据结构，甚至其他列表或函数。
 
 ```{r}
 l = list(m, z)
@@ -282,37 +285,37 @@ ll = list(sublist=l, a_matrix=m, numeric_value=42, this_string="Hello World", ev
 ll
 ```
 
-Lists are most commonly used when returning a large number of results from a function that do not fit into any of the previous data structures. 
+列表最常用于从不适合任何先前数据结构的函数返回大量结果时。
 
-## More information
+## 更多信息
 
-You can get more information about any R commands relevant to these datatypes using by typing `?function` in an interactive session.
+通过在交互式会话中键入`?function`，可以获得这些数据类型相关的R命令的更多信息。
 
-## Data Types
+## 数据类型
 
-### What is Tidy Data?
+### 什么是整洁的数据
 
-Tidy data is a concept largely defined by Hadley Wickham [@wickham_2014]. Tidy data has the following three characteristics:
+整洁的数据主要是Hadley Wickham [@wickham_2014]定义的概念。整洁的数据具有以下三个特征：
 
-1. Each variable has its own column.
-2. Each observation has its own row.
-3. Each value has its own cell.
+1. 每个变量都有自己的列;
+2. 每个观测都有自己的行;
+3. 每个值都有自己的单元格。
 
-Here is an example of some tidy data:
+以下是一些整洁数据的示例：
 ```{R,eval=TRUE, echo=FALSE}
 data.frame(Students=c("Mark", "Jane", "Mohammed", "Tom", "Celia"), Subject=c("Maths", "Biology", "Physics", "Maths", "Computing"), Years=c(1,2,3,2,3), Score=c(5,6,4,7,9))
 ```
 
-Here is an example of some untidy data:
+以下是一些不整洁数据的示例：
 ```{R, eval=TRUE, echo=FALSE}
 data.frame(Students=c("Matt", "Matt", "Ellie", "Ellie", "Tim", "Tim", "Louise", "Louise", "Kelly", "Kelly"), Sport=c("Tennis","Tennis", "Rugby", "Rugby","Football", "Football","Swimming","Swimming", "Running", "Running"), Category=c("Wins", "Losses", "Wins", "Losses", "Wins", "Losses", "Wins", "Losses", "Wins", "Losses"), Counts=c(0,1,3,2,1,4,2,2,5,1))
 ```
 
-Task 1: In what ways is the untidy data not tidy? How could we make the untidy data tidy?
+任务1：不整洁的数据在哪些方面不整洁？ z怎么整理数据？
 
-Tidy data is generally easier to work with than untidy data, especially if you are working with packages such as ggplot. Fortunately, packages are available to make untidy data tidy. Today we will explore a few of the functions available in the tidyr package which can be used to make untidy data tidy. If you are interested in finding out more about tidying data, we recommend reading "R for Data Science", by Garrett Grolemund and Hadley Wickham. An electronic copy is available here: http://r4ds.had.co.nz/
+整洁的数据通常比不整齐的数据更容易使用，特别是使用ggplot等软件包。 幸运的是，可以使用软件包来整理不整洁的数据。 今天将探讨tidyr包中一些整理数据的函数。如果有兴趣了解有关整理数据的更多信息，建议阅读Garrett Grolemund和Hadley Wickham撰写的“R for Data Science”。 电子版可在此处获取：[http://r4ds.had.co.nz/](http://r4ds.had.co.nz/)
 
-The untidy data above is untidy because two variables (`Wins` and `Losses`) are stored in one column (`Category`). This is a common way in which data can be untidy. To tidy this data, we need to make `Wins` and `Losses` into columns, and store the values in `Counts` in these columns. Fortunately, there is a function from the tidyverse packages to perform this operation. The function is called `spread`, and it takes two arguments, `key` and `value`. You should pass the name of the column which contains multiple variables to `key`, and pass the name of the column which contains values from multiple variables to `value`. For example:
+上面不整洁的数据因为两个变量（`Wins`和`Lossses`）存储在一列（`Category`）中。这是数据不整洁的常见方式。 为了整理这些数据，我们需要将`Wins`和`Lossses`分成两列，并将`Counts`中的值拆分到这两列。 幸运的是，tidyverse包中有一个函数来执行此操作。`spread`有两个参数，`key`和`value`。 将包含多个变量的列的名称传递给`key`，并将包含多个变量值的列的名称传递给`value`。 例如：
 
 ```{r, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -322,29 +325,28 @@ sports
 spread(sports, key=Category, value=Counts)
 ```
 
-Task 2: The dataframe `foods` defined below is untidy. Work out why and use `spread()` to tidy it
+任务2：下面定义的数据框`foods`不是整洁的数据，找出不整洁的原因并用`spread()`整理数据。
 
 ```{R, echo=TRUE, eval=TRUE}
 foods<-data.frame(student=c("Antoinette","Antoinette","Taylor", "Taylor", "Alexa", "Alexa"), Category=c("Dinner", "Dessert", "Dinner", "Dessert", "Dinner","Dessert"), Frequency=c(3,1,4,5,2,1))
 ```
 
-The other common way in which data can be untidy is if the columns are values instead of variables. For example, the dataframe below shows the percentages some students got in tests they did in May and June. The data is untidy because the columns `May` and `June` are values, not variables.
+数据不整洁的另一种常见方式为列是值而不是变量。例如，下面的数据框显示了一些学生在5月和6月的测试中获得的分数。 数据不整洁，因为“May”和“June”列是值，而不是变量。
 
 ```{R}
 percentages<-data.frame(student=c("Alejandro", "Pietro", "Jane"), "May"=c(90,12,45), "June"=c(80,30,100))
 ```
 
-Fortunately, there is a function in the tidyverse packages to deal with this problem too. `gather()` takes the names of the columns which are values, the `key` and the `value` as arguments. This time, the `key` is the name of the variable with values as column names, and the `value` is the name of the variable with values spread over multiple columns. Ie:
+tidyverse包中有一个函数来处理这种问题。`gather()`获取列为值的名称，`key`和`value`作为参数。 `key`是变量的名称，值为列名，`value`是变量的名称，其值分布在多个列上。即：
 
 ```{R}
 gather(percentages, "May", "June", key="Month", value = "Percentage")
 ```
+这些例子与scRNA-seq分析没有多大关系，但旨在帮助说明整洁和不整洁数据的特征。 如果数据以整齐的格式存储，会发现分析单细胞RNA-seq数据要容易得多。通常鼓励以整齐的方式存储数据促进单细胞RNA-seq分析。
 
-These examples don't have much to do with single-cell RNA-seq analysis, but are designed to help illustrate the features of tidy and untidy data. You will find it much easier to analyse your single-cell RNA-seq data if your data is stored in a tidy format. Fortunately, the data structures we commonly use to facilitate single-cell RNA-seq analysis usually encourage store your data in a tidy manner.
+### 什么是Rich data?
 
-### What is Rich Data?
-
-If you google 'rich data', you will find lots of different definitions for this term. In this course, we will use 'rich data' to mean data which is generated by combining information from multiple sources. For example, you could make rich data by creating an object in R which contains a matrix of gene expression values across the cells in your single-cell RNA-seq experiment, but also information about how the experiment was performed. Objects of the `SingleCellExperiment` class, which we will discuss below, are an example of rich data.
+如果你谷歌“Rich datga”，会发现这个术语有很多不同的定义。在本课程中，我们将使用“Rich data”来表示通过整合多个来源的信息生成的数据。例如，在R中创建一个对象来生成Rich data，该对象包含scRNA-seq实验中细胞的基因表达矩阵，还有关于如何进行实验的信息。 下面讨论的`SingleCellExperiment`类的对象是Rich data的一个例子。 
 
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 library(knitr)
@@ -353,11 +355,7 @@ opts_chunk$set(fig.align = "center")
 set.seed(1)
 ```
 
----
-output: html_document
----
-
-## Bioconductor, `SingleCellExperiment` and `scater`
+## Bioconductor, `SingleCellExperiment` 和 `scater`
 
 ```{r, echo=FALSE}
 library(knitr)
@@ -367,16 +365,16 @@ set.seed(1)
 
 ### Bioconductor
 
-From [Wikipedia](https://en.wikipedia.org/wiki/Bioconductor):
-[Bioconductor](https://www.bioconductor.org/) is a free, open source and open development software project for the analysis and comprehension of genomic data generated by wet lab experiments in molecular biology. Bioconductor is based primarily on the statistical R programming language, but does contain contributions in other programming languages. It has two releases each year that follow the semiannual releases of R. At any one time there is a release version, which corresponds to the released version of R, and a development version, which corresponds to the development version of R. Most users will find the release version appropriate for their needs.
+来自[Wikipedia](https://en.wikipedia.org/wiki/Bioconductor):
+[Bioconductor](https://www.bioconductor.org/)是一个免费的，开源的开放式开发软件项目，用于分析和理解湿实验室产生的基因组数据。Bioconductor主要基于统计R编程语言，但也包含其他编程语言的贡献。 它每年有两个版本，伴随R的半年一个版本。在任何时候都存在一个发布版本，它对应于R的发布版本，以及一个开发版本，它对应于R的开发版本。大多数用户可以找到适合他们需求的发布版本。
 
-We strongly recommend all new comers and even experienced high-throughput data analysts to use well developed and maintained [Bioconductor methods and classes](https://www.bioconductor.org/developers/how-to/commonMethodsAndClasses/).
+我们强烈建议所有新成员，甚至经验丰富的高通量数据分析师使用[Bioconductor方法和类](https://www.bioconductor.org/developers/how-to/commonMethodsAndClasses/)。
 
-### `SingleCellExperiment` class
+### `SingleCellExperiment` 类
 
-[`SingleCellExperiment`](http://bioconductor.org/packages/SingleCellExperiment) (SCE) is a S4 class for storing data from single-cell experiments. This includes specialized methods to store and retrieve spike-in information, dimensionality reduction coordinates and size factors for each cell, along with the usual metadata for genes and libraries.
+[`SingleCellExperiment`](http://bioconductor.org/packages/SingleCellExperiment)(SCE)是用于存储单细胞实验数据的S4类。 这包括存储和检索spike-in信息，细胞的降维坐标和尺寸因子，以及基因和文库的常用元数据。
 
-In practice, an object of this class can be created using its constructor:
+可以使用其构造函数创建此类的对象：
 ```{r message=FALSE, warning=FALSE,warning=FALSE}
 library(SingleCellExperiment)
 counts <- matrix(rpois(100, lambda = 10), ncol=10, nrow=10)
@@ -390,15 +388,15 @@ sce <- SingleCellExperiment(
 sce
 ```
 
-In the `SingleCellExperiment`, users can assign arbitrary names to entries of assays. To assist interoperability between packages, some suggestions for what the names should be for particular types of data are provided by the authors:
+`SingleCellExperiment`中, 用户可以为实验条目指定任意名称。 为了协助软件包之间的互操作性，作者提供了针对特定类型数据的名称的一些建议：
 
-* __counts__: Raw count data, e.g., number of reads or transcripts for a particular gene.
-* __normcounts__: Normalized values on the same scale as the original counts. For example, counts divided by cell-specific size factors that are centred at unity.
-* __logcounts__: Log-transformed counts or count-like values. In most cases, this will be defined as log-transformed normcounts, e.g., using log base 2 and a pseudo-count of 1.
-* __cpm__: Counts-per-million. This is the read count for each gene in each cell, divided by the library size of each cell in millions.
-* __tpm__: Transcripts-per-million. This is the number of transcripts for each gene in each cell, divided by the total number of transcripts in that cell (in millions).
+* **counts**: 原始count数据，比如特定基因或转录本的reads数目;
+* **normcounts**: 标准化的值与原始counts具有相同的尺度。比如，counts除以细胞特异尺寸因子;
+* **logcounts**: 对数转换counts或类似counts的值。在大多数情况下，这被定义为对数转换的标准值，例如使用log2(count+1);
+* **cpm**: Counts-per-million，$CPM=A*10^6/mappedreads$, A为比对到某基因的reads数（read count）;
+* **tpm**: Transcripts-per-million。$TPM_i=(N_i/L_i)*10^6/sum(N_i/L_i+……..+ N_m/L_m)$. Ni：mapping到基因i上的read数； Li：基因i的外显子长度的总和.
 
-Each of these suggested names has an appropriate getter/setter method for convenient manipulation of the `SingleCellExperiment`. For example, we can take the (very specifically named) `counts` slot, normalise it and assign it to `normcounts` instead:
+上述建议命名都有其getter/setter方法，方便操作`SingleCellExperiment`。比如，可以将`counts`标准化并赋值给`normcounts`：
 
 ```{r}
 normcounts(sce) <- log2(counts(sce) + 1)
@@ -407,42 +405,41 @@ dim(normcounts(sce))
 head(normcounts(sce))
 ```
 
-### `scater` package
+### `scater` 包
 
-[`scater`](http://bioconductor.org/packages/scater/) is a R package for single-cell RNA-seq analysis [@McCarthy2017-kb]. The package contains several useful methods for quality control, visualisation and pre-processing of data prior to further downstream analysis.
+[`scater`](http://bioconductor.org/packages/scater/)是用于scRNA-seq分析的R包[@McCarthy2017-kb]。
+其包括下游分析前的质量控制，可视化和预处理等方法。
 
-`scater` features the following functionality:
+`scater`具有以下功能：
 
-* Automated computation of QC metrics
-* Transcript quantification from read data with pseudo-alignment
-* Data format standardisation
-* Rich visualizations for exploratory analysis
-* Seamless integration into the Bioconductor universe
-* Simple normalisation methods
+* 自动计算QC指标
+* 定量来自pseudo-alignment read数据转录本
+* 数据格式标准化
+* 丰富的探索性分析可视化
+* 无缝集成到Bioconductor环境
+* 简单的规范化方法
 
-We highly recommend to use `scater` for all single-cell RNA-seq analyses and `scater` is the basis of the first part of the course.
+建议对所有scRNA-seq分析使用`scater`，而`scater`是课程第一部分的基础。
 
-As illustrated in the figure below, `scater` will help you with quality control, filtering and normalization of your expression matrix following mapping and alignment. <span style="color:red">Keep in mind that this figure represents the original version of `scater` where an `SCESet` class was used. In the newest version this figure is still correct, except that `SCESet` can be substituted with the `SingleCellExperiment` class.</span>
-
+如下图所示，`scater`在比对后对表达矩阵进行质量控制，过滤和标准化。<span style =“color：red”>注意，此图为`scater`的原始版本，其中使用`SCESet`类。 在最新版本中，该图仍然适用，除了`SCESet`用`SingleCellExperiment`替代。</ span>
 
 ![](figures/scater_qc_workflow.png)
 
-## An Introduction to ggplot2
+## ggplot2介绍
 
-### What is ggplot2?
+### ggplot2是什么?
 
-ggplot2 is an R package designed by Hadley Wickham which facilitates data plotting. In this lab, we will touch briefly on some of the features of the package. If you would like to learn more about how to use ggplot2, we would recommend reading "ggplot2 Elegant graphics for data analysis", by Hadley Wickham.
+ggplot2是由Hadley Wickham开发用于数据绘图的R软件包。在本实验中，我们将简要介绍该软件包的一些功能。 如果想了解更多关于如何使用ggplot2的信息，建议阅读Hadley Wickham撰写的“ggplot2 Elegant graphics for data analysis”。
 
+### ggplot2j原则
 
-### Principles of ggplot2
+* ggplot2数据类型为数据框(dataframe)
+* 使用`aes`映射函数指定数据框中的变量如何映射到绘图上的要素
+* 使用geoms指定数据在图表中的表示方式，例如，散点图，条形图，箱形图等。
 
-* Your data must be a dataframe if you want to plot it using ggplot2. 
-* Use the `aes` mapping function to specify how variables in the dataframe map to features on your plot
-* Use geoms to specify how your data should be represented on your graph eg. as a scatterplot, a barplot, a boxplot etc.
+### 使用`aes`映射函数
 
-### Using the `aes` mapping function
-
-The `aes` function specifies how variables in your dataframe map to features on your plot. To understand how this works, let's look at an example:
+`aes`函数指定数据框中的变量如何映射到绘图上的元素。了解其工作原理，先看一个例子：
 
 ```{R, eval=TRUE, message=FALSE}
 library(ggplot2)
@@ -456,52 +453,54 @@ counts
 ggplot(data = counts, mapping = aes(x = cell1, y = cell2))
 ```
 
-Let's take a closer look at the final command, `ggplot(data = counts, mapping = aes(x = cell1, y = cell2))`. `ggplot()` initialises a ggplot object and takes the arguments `data` and `mapping`. We pass our dataframe of counts to `data` and use the `aes()` function to specify that we would like to use the variable cell1 as our x variable and the variable cell2 as our y variable.
+最后一条命令，`ggplot(data = counts，mapping = aes(x = cell1，y = cell2))`，`ggplot()`初始化一个ggplot对象并接受参数`data`和`mapping`。 将`counts`数据框传递给`data`并使用`aes()`函数来指定将变量cell1用作x变量而将变量cell2用作y变量。
 
-Task 1: Modify the command above to initialise a ggplot object where cell10 is the x variable and cell8 is the y variable.
+任务1：修改上述命令，初始化ggplot对象，其中cell10是x变量，cell8是y变量。
 
-Clearly, the plots we have just created are not very informative because no data is displayed on them. To display data, we will need to use geoms.
+然而刚刚创建的图表信息量不大，因为它们上没有显示数据。要显示数据，我们需要使用geoms。
 
 ### Geoms
 
-We can use geoms to specify how we would like data to be displayed on our graphs. For example, our choice of geom could specify that we would like our data to be displayed as a scatterplot, a barplot or a boxplot.
+使用geoms来指定希望数据在图表上显示的方式。例如，可以指定数据显示为散点图，条形图或箱形图。
 
-Let's see how our graph would look as a scatterplot.
+下面是一个散点图的例子
 
 ```{R, eval=TRUE}
 ggplot(data = counts, mapping = aes(x = cell1, y = cell2)) + geom_point()
 ```
 
-Now we can see that there doesn't seem to be any correlation between gene expression in cell1 and cell2. Given we generated `counts` randomly, this isn't too surprising.
+可以看到，cell1和cell2中的基因表达之间似乎没有任何相关性。鉴于`counts`为随机生成数据，这并不令人奇怪。
 
-Task 2: Modify the command above to create a line plot. Hint: execute `?ggplot` and scroll down the help page. At the bottom is a link to the ggplot package index. Scroll through the index until you find the geom options.
+任务2：修改上述命令创建折线图。提示：执行`?ggplot`查看帮助页面。底部是ggplot包索引的链接，滚动索引，直到找到geom选项。
 
-### Plotting data from more than 2 cells
+### 绘制2个以上细胞的数据
 
-So far we've been considering the gene counts from 2 of the cells in our dataframe. But there are actually 10 cells in our dataframe and it would be nice to compare all of them. What if we wanted to plot data from all 10 cells at the same time?
+到目前为止，我们一直在考虑数据框中2个细胞的基因counts。但是实际上数据框中有10个细胞，最好同时比较所有这些细胞的gene count会。如果同时绘制来自所有10个细胞的数据怎么办？
 
-At the moment we can't do this because we are treating each individual cell as a variable and assigning that variable to either the x or the y axis. We could create a 10 dimensional graph to plot data from all 10 cells on, but this is a) not possible to do with ggplot and b) not very easy to interpret. What we could do instead is to tidy our data so that we had one variable representing cell ID and another variable representing gene counts, and plot those against each other. In code, this would look like:
+目前不能这样做，因为将每个单独的细胞视为变量并将该变量分配给x轴或y轴。 可以创建一个10维图来绘制来自所有10个细胞的数据，但这a)不能用ggplot实现和b)不容易解释。
+
+可以整理数据，使用表示细胞ID的变量和表示基因counts的变量。
 
 ```{R, eval=TRUE}
 counts<-gather(counts, colnames(counts)[2:11], key = 'Cell_ID', value='Counts')
 head(counts)
 ```
 
-Essentially, the problem before was that our data was not tidy because one variable (Cell_ID) was spread over multiple columns. Now that we've fixed this problem, it is much easier for us to plot data from all 10 cells on one graph.
+基本上，之前的问题是数据不整洁，变量（Cell_ID）分布在多列上。 现在解决了这个问题，更容易在一个图上绘制来自所有10个单元格的数据。
 
 ```{R, eval=TRUE}
 ggplot(counts,aes(x=Cell_ID, y=Counts)) + geom_boxplot()
 ```
 
-Task 3: Use the updated `counts` dataframe to plot a barplot with Cell_ID as the x variable and Counts as the y variable. Hint: you may find it helpful to read `?geom_bar`.
+任务3：使用更新的`counts`数据框绘制条形图，其中Cell_ID为x变量，Counts为y变量。 提示：`?geom_bar`查看帮助文档。
 
-Task 4: Use the updated `counts` dataframe to plot a scatterplot with Gene_ids as the x variable and Counts as the y variable.
+任务4：使用更新的`counts`数据框绘制散点图，其中Gene_ids为x变量，Counts为y变量。
 
-### Plotting heatmaps
+### 绘制热图
 
-A common method for visualising gene expression data is with a heatmap. Here we will use the R package `pheatmap` to perform this analysis with some gene expression data we will name `test`.
+可视化基因表达数据的常用方法是使用热图，这里使用R包`pheatmap`来进行分析。
 
-```{R, eval=TRUE, message=FALSE}
+```{r, eval=TRUE, message=FALSE,warning=FALSE}
 library(pheatmap)
 set.seed(2)
 test = matrix(rnorm(200), 20, 10)
@@ -513,37 +512,34 @@ rownames(test) = paste("Gene", 1:20, sep = "")
 pheatmap(test)
 ```
 
-Let's take a moment to work out what this graphic is showing us. Each row represents a gene and each column represents a cell. How highly expressed each gene is in each cell is represented by the colour of the corresponding box. For example, we can tell from this plot that gene18 is highly expressed in cell10 but lowly expressed in cell1.
+上面热图每行代表一个基因，每列代表一个细胞。细胞中基因表达量用相应框的颜色表示。 例如，从该图中看出，基因18在细胞10中高表达，但在细胞1中低表达。
 
-This plot also gives us information on the results of a clustering algorithm. In general, clustering algorithms aim to split datapoints (eg.cells) into groups whose members are more alike one another than they are alike the rest of the datapoints. The trees drawn on the top and left hand sides of the graph are the results of clustering algorithms and enable us to see, for example, that cells 4,8,2,6 and 10 are more alike one another than they are alike cells 7,3,5,1 and 9. The tree on the left hand side of the graph represents the results of a clustering algorithm applied to the genes in our dataset.
-
-If we look closely at the trees, we can see that eventually they have the same number of branches as there are cells and genes. In other words, the total number of cell clusters is the same as the total number of cells, and the total number of gene clusters is the same as the total number of genes. Clearly, this is not very informative, and will become impractical when we are looking at more than 10 cells and 20 genes. Fortunately, we can set the number of clusters we see on the plot. Let's try setting the number of gene clusters to 2:
+该图还提供了聚类结果的信息。通常，聚类算法旨在将数据点(比如细胞)拆分成cluster，其中cluster中点的相似性比cluster间的点相似性高。在图的顶部和左侧为层次聚类结果，可以看出，细胞4,8,2,6和10彼此更相似。
 
 ```{R, eval=TRUE}
 pheatmap(test, kmeans_k = 2)
 ```
+现在可以看到这些基因分为两个簇 - Cluster1中8个基因在细胞2,10,6,4和8表达上调，Cluster2中12个基因在细胞2,10,6,4,8中表达下调。
 
-Now we can see that the genes fall into two clusters - a cluster of 8 genes which are upregulated in cells 2, 10, 6, 4 and 8 relative to the other cells and a cluster of 12 genes which are downregulated in cells 2, 10, 6, 4 and 8 relative to the other cells.
+任务5：将cluster数量设置为3.哪个cluster数目提供更多有用信息？
 
-Task 5: Try setting the number of clusters to 3. Which number of clusters do you think is more informative?
+### 主成分分析
 
-### Principal Component Analysis
+主成分分析（PCA）是一种统计方法，使用变换将一组观察值转换为一组线性不相关变量值，称之为主成分。 变换使得第一主成分解释最大数据的变异，并且每个后续主成分在与之前主成分正交的约束下解释最大方差。
 
-Principal component analysis (PCA) is a statistical procedure that uses a transformation to convert a set of observations into a set of values of linearly uncorrelated variables called principal components. The transformation is carried out so that the first principle component accounts for as much of the variability in the data as possible, and each following principle component accounts for the greatest amount of variance possible under the contraint that it must be orthogonal to the previous components.
+PCA图可以很好地对数据进行概览，有时可以帮助识别解释数据变异的干扰因子。 在将来的实验中我们将研究如何更深入地使用单细胞RNA-seq分析中的PCA图，这里的目的是概述PCA图以及如何生成。
 
-PCA plots are a good way to get an overview of your data, and can sometimes help identify confounders which explain a high amount of the variability in your data. We will investigate how we can use PCA plots in single-cell RNA-seq analysis in more depth in a future lab, here the aim is to give you an overview of what PCA plots are and how they are generated.
+为`test`数据生成PCA图，使用`ggfortify`包让ggplot解释主成分。
 
-Let's make a PCA plot for our `test` data. We can use the  `ggfortify` package to let ggplot know how to interpret principle components.
-
-```{R,eval=TRUE, message=FALSE}
+```{r,eval=TRUE, message=FALSE,warning=FALSE}
 library(ggfortify)
 Principal_Components<-prcomp(test)
 autoplot(Principal_Components, label=TRUE)
 ```
 
-Task 6: Compare your clusters to the pheatmap clusters. Are they related? (Hint: have a look at the gene tree for the first pheatmap we plotted)
+任务6：将Cluster与pheatmap的Cluster进行比较。它们有关系吗？（提示：绘制的第一个pheatmap的基因树）
 
-Task 7: Produce a heatmap and PCA plot for `counts` (below):
+任务7：为`counts`生成热图和PCA图：
 
 ```{R,eval=TRUE}
 set.seed(1)
