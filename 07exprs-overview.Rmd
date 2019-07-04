@@ -293,10 +293,12 @@ In addition to removing cells with poor quality, it is usually a good idea to ex
 
 It is often instructive to consider the number of reads consumed by the top 50 expressed genes.
 
-```{r top50-gene-expr, fig.cap = "Number of total counts consumed by the top 50 expressed genes", fig.asp = 1}
+```{r top50-gene-expr-1, fig.cap = "Number of total counts consumed by the top 50 expressed genes", fig.asp = 1,eval=FALSE}
 plotHighestExprs(umi, exprs_values = "counts")
 ```
-
+```{r top50-gene-expr-2, fig.cap = "Number of total counts consumed by the top 50 expressed genes", fig.asp = 1,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-qc_files/figure-html/top50-gene-expr-1.png")
+```
 The distributions are relatively flat indicating (but not guaranteeing!) good coverage of the full transcriptome of these cells. However, there are several spike-ins in the top 15 genes which suggests a greater dilution of the spike-ins may be preferrable if the experiment is to be repeated.
 
 
@@ -342,11 +344,6 @@ saveRDS(umi, file = "data/tung/umi.rds")
 
 Perform exactly the same QC analysis with read counts of the same Blischak data. Use `tung/reads.txt` file to load the reads. Once you have finished please compare your results to ours (next chapter).
 
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
 
 ## Expression QC (Reads)
 
@@ -516,8 +513,12 @@ vennDiagram(
 )
 ```
 
-```{r top50-gene-expr-reads, fig.cap = "Number of total counts consumed by the top 50 expressed genes", fig.asp = 1}
+```{r top50-gene-expr-reads-1, fig.cap = "Number of total counts consumed by the top 50 expressed genes", fig.asp = 1,eval=FALSE}
 plotHighestExprs(reads, exprs_values = "counts")
+```
+
+```{r top50-gene-expr-reads-2, fig.cap = "Number of total counts consumed by the top 50 expressed genes", fig.asp = 1,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-qc-reads_files/figure-html/top50-gene-expr-reads-1.png")
 ```
 
 ```{r}
@@ -548,9 +549,6 @@ saveRDS(reads, file = "data/tung/reads.rds")
 
 By comparing Figure \@ref(fig:cell-filt-comp) and Figure \@ref(fig:cell-filt-comp-reads), it is clear that the reads based filtering removed more cells than the UMI based analysis. If you go back and compare the results you should be able to conclude that the ERCC and MT filters are more strict for the reads-based analysis.
 
-```{r}
-sessionInfo()
-```
 
 ## Data visualization
 
@@ -589,7 +587,7 @@ knitr::include_graphics("figures/pca.png")
 #### Before QC
 
 Without log-transformation:
-```{r expr-overview-pca-before-qc1, fig.cap = "PCA plot of the tung data"}
+```{r expr-overview-pca-before-qc1.1, fig.cap = "PCA plot of the tung data",eval=FALSE}
 tmp <- runPCA(
   umi[endog_genes, ],
   exprs_values = "counts"
@@ -601,9 +599,12 @@ plotPCA(
     shape_by = "individual"
 )
 ```
+```{r fig.cap = "PCA plot of the tung data",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-overview_files/figure-html/expr-overview-pca-before-qc1-1.png")
+```
 
 With log-transformation:
-```{r expr-overview-pca-before-qc2, fig.cap = "PCA plot of the tung data"}
+```{r expr-overview-pca-before-qc2.1, fig.cap = "PCA plot of the tung data",eval=FALSE}
 tmp <- runPCA(
   umi[endog_genes, ],
   exprs_values = "logcounts_raw"
@@ -615,6 +616,9 @@ plotPCA(
     shape_by = "individual"
 )
 ```
+```{r fig.cap = "PCA plot of the tung data",eval=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-overview_files/figure-html/expr-overview-pca-before-qc2-1.png")
+```
 
 Clearly log-transformation is benefitial for our data - it reduces the variance on the first principal component and already separates some biological effects. Moreover, it makes the distribution of the expression values more normal. In the following analysis and chapters we will be using log-transformed raw counts by default.
 
@@ -622,7 +626,7 @@ __However, note that just a log-transformation is not enough to account for diff
 
 #### After QC
 
-```{r expr-overview-pca-after-qc, fig.cap = "PCA plot of the tung data"}
+```{r expr-overview-pca-after-qc-1, fig.cap = "PCA plot of the tung data",eval=FALSE}
 tmp <- runPCA(
   umi.qc[endog_genes, ],
   exprs_values = "logcounts_raw"
@@ -633,6 +637,10 @@ plotPCA(
     size_by = "total_features_by_counts",
     shape_by = "individual"
 )
+```
+```{r, fig.cap = "PCA plot of the tung data",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-overview_files/figure-html/expr-overview-pca-after-qc-1.png")
+
 ```
 
 Comparing Figure \@ref(fig:expr-overview-pca-before-qc2) and Figure \@ref(fig:expr-overview-pca-after-qc), it is clear that after quality control the NA19098.r2 cells no longer form a group of outliers.
@@ -760,13 +768,6 @@ plotTSNE(
 
 Perform the same analysis with read counts of the Blischak data. Use `tung/reads.rds` file to load the reads SCE object. Once you have finished please compare your results to ours (next chapter).
 
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
-
-
 ## Data visualization (Reads)
 
 ```{r, message=FALSE, warning=FALSE}
@@ -881,10 +882,6 @@ plotTSNE(
 )
 ```
 
-```{r}
-sessionInfo()
-```
-
 ## Identifying confounding factors
 
 ### Introduction
@@ -976,11 +973,6 @@ Ideally, we would like to compensate for all of these differences and biases.
 
 Perform the same analysis with read counts of the Blischak data. Use `tung/reads.rds` file to load the reads SCESet object. Once you have finished please compare your results to ours (next chapter).
 
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
 
 ## Identifying confounding factors (Reads)
 
@@ -1030,10 +1022,6 @@ plotExplanatoryVariables(
 )
 ```
 
-```{r}
-sessionInfo()
-```
-
 ## Normalization theory
 
 ### Introduction
@@ -1074,8 +1062,13 @@ million (__CPM__) by dividing each column by its total then multiplying by
 calculation of total expression in order to correct for total cell RNA
 content, therefore we will only use endogenous genes. Example of a __CPM__ function in `R`:
 
-```{r calc_cpm-source, eval=FALSE}
-
+```{r calc_cpm-source, eval=FALSE,echo=TRUE}
+calc_cpm <-
+function (expr_mat, spikes = NULL) 
+{
+    norm_factor <- colSums(expr_mat[-spikes, ])
+    return(t(t(expr_mat)/norm_factor)) * 10^6
+}
 ```
 
 One potential drawback of __CPM__ is if your sample contains genes that are both very highly expressed and differentially expressed across the cells. In this case, the total molecules in the cell may depend of whether such genes are on/off in the cell and normalizing by total molecules may hide the differential expression of those genes and/or falsely create differential expression for the remaining genes. 
@@ -1088,16 +1081,35 @@ To deal with this potentiality several other measures were devised.
 
 The __size factor (SF)__ was proposed and popularized by DESeq [@Anders2010-jr]. First the geometric mean of each gene across all cells is calculated. The size factor for each cell is the median across genes of the ratio of the expression to the gene's geometric mean. A drawback to this method is that since it uses the geometric mean only genes with non-zero expression values across all cells can be used in its calculation, making it unadvisable for large low-depth scRNASeq experiments. `edgeR` & `scater` call this method __RLE__ for "relative log expression". Example of a __SF__ function in `R`:
 
-```{r calc_sf-source, eval=FALSE}
-
+```{r calc_sf-source, eval=FALSE,echo=TRUE}
+calc_sf <-
+function (expr_mat, spikes = NULL) 
+{
+    geomeans <- exp(rowMeans(log(expr_mat[-spikes, ])))
+    SF <- function(cnts) {
+        median((cnts/geomeans)[(is.finite(geomeans) & geomeans > 
+            0)])
+    }
+    norm_factor <- apply(expr_mat[-spikes, ], 2, SF)
+    return(t(t(expr_mat)/norm_factor))
+}
 ```
 
 #### UQ
 
 The __upperquartile (UQ)__ was proposed by [@Bullard2010-eb]. Here each column is divided by the 75% quantile of the counts for each library. Often the calculated quantile is scaled by the median across cells to keep the absolute level of expression relatively consistent. A drawback to this method is that for low-depth scRNASeq experiments the large number of undetected genes may result in the 75% quantile being zero (or close to it). This limitation can be overcome by generalizing the idea and using a higher quantile (eg. the 99% quantile is the default in scater) or by excluding zeros prior to calculating the 75% quantile. Example of a __UQ__ function in `R`:
 
-```{r calc_uq-source, eval=FALSE}
-
+```{r calc_uq-source, eval=FALSE,echo=TRUE}
+calc_uq <-
+function (expr_mat, spikes = NULL) 
+{
+    UQ <- function(x) {
+        quantile(x[x > 0], 0.75)
+    }
+    uq <- unlist(apply(expr_mat[-spikes, ], 2, UQ))
+    norm_factor <- uq/median(uq)
+    return(t(t(expr_mat)/norm_factor))
+}
 ```
 
 #### TMM
@@ -1112,16 +1124,47 @@ Another method is called __TMM__ is the weighted trimmed mean of M-values (to th
 
 A final way to correct for library size is to downsample the expression matrix so that each cell has approximately the same total number of molecules. The benefit of this method is that zero values will be introduced by the down sampling thus eliminating any biases due to differing numbers of detected genes. However, the major drawback is that the process is not deterministic so each time the downsampling is run the resulting expression matrix is slightly different. Thus, often analyses must be run on multiple downsamplings to ensure results are robust. Example of a __downsampling__ function in `R`:
 
-```{r Down_Sample_Matrix-source, eval=FALSE}
-
+```{r Down_Sample_Matrix-source, eval=FALSE,echo=TRUE}
+Down_Sample_Matrix <-
+function (expr_mat) 
+{
+    min_lib_size <- min(colSums(expr_mat))
+    down_sample <- function(x) {
+        prob <- min_lib_size/sum(x)
+        return(unlist(lapply(x, function(y) {
+            rbinom(1, y, prob)
+        })))
+    }
+    down_sampled_mat <- apply(expr_mat, 2, down_sample)
+    return(down_sampled_mat)
+}
 ```
 
 ### Effectiveness
 
 to compare the efficiency of different normalization methods we will use visual inspection of `PCA` plots and calculation of cell-wise _relative log expression_ via `scater`'s `plotRLE()` function. Namely, cells with many (few) reads have higher (lower) than median expression for most genes resulting in a positive (negative) _RLE_ across the cell, whereas normalized cells have an _RLE_ close to zero. Example of a _RLE_ function in `R`:
 
-```{r calc_cell_RLE-source, eval=FALSE}
-
+```{r calc_cell_RLE-source, eval=FALSE,echo=TRUE}
+calc_cell_RLE <-
+function (expr_mat, spikes = NULL) 
+{
+    RLE_gene <- function(x) {
+        if (median(unlist(x)) > 0) {
+            log((x + 1)/(median(unlist(x)) + 1))/log(2)
+        }
+        else {
+            rep(NA, times = length(x))
+        }
+    }
+    if (!is.null(spikes)) {
+        RLE_matrix <- t(apply(expr_mat[-spikes, ], 1, RLE_gene))
+    }
+    else {
+        RLE_matrix <- t(apply(expr_mat, 1, RLE_gene))
+    }
+    cell_RLE <- apply(RLE_matrix, 2, median, na.rm = T)
+    return(cell_RLE)
+}
 ```
 
 __Note__ The __RLE__, __TMM__, and __UQ__ size-factor methods were developed for bulk RNA-seq data and, depending on the experimental context, may not be appropriate for single-cell RNA-seq data, as their underlying assumptions may be problematically violated. 
@@ -1136,7 +1179,7 @@ __Note__ For __CPM__ normalisation we use `scater`'s `calculateCPM()` function. 
 
 We will continue to work with the `tung` data that was used in the previous chapter.
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE,echo=TRUE}
 library(scRNA.seq.funcs)
 library(scater)
 library(scran)
@@ -1148,7 +1191,7 @@ endog_genes <- !rowData(umi.qc)$is_feature_control
 ```
 
 ### Raw
-```{r norm-pca-raw, fig.cap = "PCA plot of the tung data"}
+```{r norm-pca-raw, fig.cap = "PCA plot of the tung data",,echo=TRUE}
 tmp <- runPCA(
   umi.qc[endog_genes, ],
   exprs_values = "logcounts_raw"
@@ -1162,7 +1205,7 @@ plotPCA(
 ```
 
 ### CPM
-```{r norm-pca-cpm, fig.cap = "PCA plot of the tung data after CPM normalisation"}
+```{r norm-pca-cpm, fig.cap = "PCA plot of the tung data after CPM normalisation",echo=TRUE}
 logcounts(umi.qc) <- log2(calculateCPM(umi.qc, use_size_factors = FALSE) + 1)
 plotPCA(
     umi.qc[endog_genes, ],
@@ -1185,7 +1228,7 @@ plotRLE(
 ```
 
 ### scran
-```{r norm-pca-lsf, fig.cap = "PCA plot of the tung data after LSF normalisation"}
+```{r norm-pca-lsf, fig.cap = "PCA plot of the tung data after LSF normalisation",cache=TRUE,echo=TRUE}
 qclust <- quickCluster(umi.qc, min.size = 30)
 umi.qc <- computeSumFactors(umi.qc, sizes = 15, clusters = qclust)
 umi.qc <- normalize(umi.qc)
@@ -1196,7 +1239,7 @@ plotPCA(
     shape_by = "individual"
 )
 ```
-```{r norm-ours-rle-scran, fig.cap = "Cell-wise RLE of the tung data"}
+```{r norm-ours-rle-scran, fig.cap = "Cell-wise RLE of the tung data",echo=TRUE}
 plotRLE(
     umi.qc[endog_genes, ], 
     exprs_values = "logcounts_raw",
@@ -1210,14 +1253,14 @@ plotRLE(
 ```
 scran sometimes calculates negative or zero size factors. These will completely distort the normalized expression matrix. 
 We can check the size factors scran has computed like so:
-```{r}
+```{r,echo=TRUE}
 summary(sizeFactors(umi.qc))
 ```
 For this dataset all the size factors are reasonable so we are done. If you find scran has calculated negative size factors try increasing the cluster and pool sizes until they are all positive.
 
 ### Downsampling 
 
-```{r norm-pca-downsample, fig.cap = "PCA plot of the tung data after downsampling"}
+```{r norm-pca-downsample, fig.cap = "PCA plot of the tung data after downsampling",cache=TRUE,echo=TRUE}
 logcounts(umi.qc) <- log2(Down_Sample_Matrix(counts(umi.qc)) + 1)
 plotPCA(
     umi.qc[endog_genes, ],
@@ -1226,7 +1269,7 @@ plotPCA(
     shape_by = "individual"
 )
 ```
-```{r norm-ours-rle-downsample, fig.cap = "Cell-wise RLE of the tung data"}
+```{r norm-ours-rle-downsample, fig.cap = "Cell-wise RLE of the tung data",echo=TRUE}
 plotRLE(
     umi.qc[endog_genes, ], 
     exprs_values = "logcounts_raw",
@@ -1256,7 +1299,7 @@ gene/transcript is sequenced, not the entire length. If in doubt check
 for a relationship between gene/transcript length and expression level.
 
 However, here we show how these normalisations can be calculated using `scater`. First, we need to find the effective transcript length in Kilobases. However, our dataset containes only gene IDs, therefore we will be using the gene lengths instead of transcripts. `scater` uses the [biomaRt](https://bioconductor.org/packages/release/bioc/html/biomaRt.html) package, which allows one to annotate genes by other attributes:
-```{r, message = FALSE, warning = FALSE}
+```{r, message = FALSE, warning = FALSE,eval=FALSE,echo=TRUE}
 umi.qc <- getBMFeatureAnnos(
     umi.qc,
     filters = "ensembl_gene_id", 
@@ -1293,31 +1336,36 @@ umi.qc <- getBMFeatureAnnos(
 ```
 
 Some of the genes were not annotated, therefore we filter them out:
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 umi.qc.ann <- umi.qc[!is.na(rowData(umi.qc)$ensembl_gene_id), ]
 ```
 
 Now we compute the total gene length in Kilobases by using the `end_position` and `start_position` fields:
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 eff_length <- 
     abs(rowData(umi.qc.ann)$end_position - rowData(umi.qc.ann)$start_position) / 1000
 ```
 
-```{r length-vs-mean, fig.cap = "Gene length vs Mean Expression for the raw data"}
+```{r length-vs-mean-1, fig.cap = "Gene length vs Mean Expression for the raw data",eval=FALSE,echo=TRUE}
 plot(eff_length, rowMeans(counts(umi.qc.ann)))
 ```
+```{r length-vs-mean-2, fig.cap = "Gene length vs Mean Expression for the raw data"}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm_files/figure-html/length-vs-mean-1.png")
+```
+
+
 There is no relationship between gene length and mean expression so __FPKM__s & __TPM__s are inappropriate for this dataset. 
 But we will demonstrate them anyway.
 
 __Note__ Here calculate the total gene length instead of the total exon length. Many genes will contain lots of introns so their `eff_length` will be very different from what we have calculated. Please consider our calculation as approximation. If you want to use the total exon lengths, please refer to [this page](https://www.biostars.org/p/83901/).
 
 Now we are ready to perform the normalisations:
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 tpm(umi.qc.ann) <- log2(calculateTPM(umi.qc.ann, eff_length) + 1)
 ```
 
 Plot the results as a PCA plot:
-```{r norm-pca-fpkm, fig.cap = "PCA plot of the tung data after TPM normalisation"}
+```{r norm-pca-fpkm-1, fig.cap = "PCA plot of the tung data after TPM normalisation",eval=FALSE,echo=TRUE}
 tmp <- runPCA(
   umi.qc.ann,
   exprs_values = "tpm",
@@ -1330,11 +1378,15 @@ plotPCA(
 )
 ```
 
-```{r}
+```{r norm-pca-fpkm-2, fig.cap = "PCA plot of the tung data after TPM normalisation"}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm_files/figure-html/norm-pca-fpkm-1.png")
+```
+
+```{r,eval=FALSE,echo=TRUE}
 tpm(umi.qc.ann) <- log2(calculateFPKM(umi.qc.ann, eff_length) + 1)
 ```
 
-```{r norm-pca-tpm, fig.cap = "PCA plot of the tung data after FPKM normalisation"}
+```{r norm-pca-tpm-1, fig.cap = "PCA plot of the tung data after FPKM normalisation",eval=FALSE,echo=TRUE}
 tmp <- runPCA(
   umi.qc.ann,
   exprs_values = "tpm",
@@ -1347,21 +1399,19 @@ plotPCA(
 )
 ```
 
+```{r norm-pca-tpm-2, fig.cap = "PCA plot of the tung data after FPKM normalisation",eval=FALSE,echo=TRUE}
+
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm_files/figure-html/norm-pca-tpm-1.png")
+```
 __Note__ The `PCA` looks for differences between cells. Gene length is the same across cells for each gene thus __FPKM__ is almost identical to the __CPM__ plot (it is just rotated) since it performs __CPM__ first then normalizes gene length. Whereas, __TPM__ is different because it weights genes by their length before performing __CPM__. 
 
 ### Exercise
 
 Perform the same analysis with read counts of the `tung` data. Use `tung/reads.rds` file to load the reads `SCE` object. Once you have finished please compare your results to ours (next chapter).
 
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
-
 ## Normalization practice (Reads)
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE,echo=TRUE}
 library(scRNA.seq.funcs)
 library(scater)
 library(scran)
@@ -1374,7 +1424,7 @@ reads.qc <- reads[rowData(reads)$use, colData(reads)$use]
 endog_genes <- !rowData(reads.qc)$is_feature_control
 ```
 
-```{r norm-pca-raw-reads, fig.cap = "PCA plot of the tung data"}
+```{r norm-pca-raw-reads, fig.cap = "PCA plot of the tung data",echo=TRUE}
 tmp <- runPCA(
   reads.qc[endog_genes, ],
   exprs_values = "logcounts_raw"
@@ -1387,7 +1437,7 @@ plotPCA(
 )
 ```
 
-```{r norm-pca-cpm-reads, fig.cap = "PCA plot of the tung data after CPM normalisation"}
+```{r norm-pca-cpm-reads, fig.cap = "PCA plot of the tung data after CPM normalisation",echo=TRUE}
 logcounts(reads.qc) <- log2(calculateCPM(reads.qc, use_size_factors = FALSE) + 1)
 plotPCA(
     reads.qc[endog_genes, ],
@@ -1396,7 +1446,7 @@ plotPCA(
     shape_by = "individual"
 )
 ```
-```{r norm-ours-rle-cpm-reads, fig.cap = "Cell-wise RLE of the tung data", warning=FALSE}
+```{r norm-ours-rle-cpm-reads, fig.cap = "Cell-wise RLE of the tung data", warning=FALSE,echo=TRUE}
 plotRLE(
     reads.qc[endog_genes, ], 
     exprs_values = "logcounts_raw",
@@ -1409,7 +1459,7 @@ plotRLE(
 )
 ```
 
-```{r norm-pca-lsf-umi, fig.cap = "PCA plot of the tung data after LSF normalisation"}
+```{r norm-pca-lsf-umi, fig.cap = "PCA plot of the tung data after LSF normalisation",echo=TRUE}
 qclust <- quickCluster(reads.qc, min.size = 30)
 reads.qc <- computeSumFactors(reads.qc, sizes = 15, clusters = qclust)
 reads.qc <- normalize(reads.qc)
@@ -1421,7 +1471,7 @@ plotPCA(
 )
 ```
 
-```{r norm-ours-rle-scran-reads, fig.cap = "Cell-wise RLE of the tung data"}
+```{r norm-ours-rle-scran-reads, fig.cap = "Cell-wise RLE of the tung data",echo=TRUE}
 plotRLE(
     reads.qc[endog_genes, ], 
     exprs_values = "logcounts_raw",
@@ -1434,7 +1484,7 @@ plotRLE(
 )
 ```
 
-```{r norm-pca-downsample-reads, fig.cap = "PCA plot of the tung data after downsampling"}
+```{r norm-pca-downsample-reads, fig.cap = "PCA plot of the tung data after downsampling",echo=TRUE}
 logcounts(reads.qc) <- log2(Down_Sample_Matrix(counts(reads.qc)) + 1)
 plotPCA(
     reads.qc[endog_genes, ],
@@ -1443,7 +1493,7 @@ plotPCA(
     shape_by = "individual"
 )
 ```
-```{r norm-ours-rle-downsample-reads, fig.cap = "Cell-wise RLE of the tung data"}
+```{r norm-ours-rle-downsample-reads, fig.cap = "Cell-wise RLE of the tung data",echo=TRUE}
 plotRLE(
     reads.qc[endog_genes, ], 
     exprs_values = "logcounts_raw",
@@ -1456,7 +1506,7 @@ plotRLE(
 )
 ```
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 reads.qc <- getBMFeatureAnnos(
     reads.qc,
     filters = "ensembl_gene_id", 
@@ -1473,20 +1523,20 @@ reads.qc <- getBMFeatureAnnos(
 )
 ```
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 reads.qc.ann <- reads.qc[!is.na(rowData(reads.qc)$ensembl_gene_id), ]
 ```
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 eff_length <- 
     abs(rowData(reads.qc.ann)$end_position - rowData(reads.qc.ann)$start_position) / 1000
 ```
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 tpm(reads.qc.ann) <- log2(calculateTPM(reads.qc.ann, eff_length) + 1)
 ```
 
-```{r norm-pca-tpm-reads, fig.cap = "PCA plot of the tung data after TPM normalisation"}
+```{r norm-pca-tpm-reads-1, fig.cap = "PCA plot of the tung data after TPM normalisation",eval=FALSE,echo=TRUE}
 tmp <- runPCA(
   reads.qc.ann,
   exprs_values = "tpm",
@@ -1499,11 +1549,15 @@ plotPCA(
 )
 ```
 
-```{r}
+```{r norm-pca-tpm-reads-2, fig.cap = "PCA plot of the tung data after TPM normalisation"}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-pca-tpm-reads-1.png")
+```
+
+```{r,eval=FALSE,echo=TRUE}
 tpm(reads.qc.ann) <- log2(calculateFPKM(reads.qc.ann, eff_length) + 1)
 ```
 
-```{r norm-pca-fpkm-reads, fig.cap = "PCA plot of the tung data after FPKM normalisation", eval=FALSE}
+```{r norm-pca-fpkm-reads, fig.cap = "PCA plot of the tung data after FPKM normalisation", eval=FALSE,echo=TRUE}
 tmp <- runPCA(
   reads.qc.ann,
   exprs_values = "tpm",
@@ -1514,10 +1568,6 @@ plotPCA(
     size_by = "total_features_by_counts",
     shape_by = "individual"
 )
-```
-
-```{r}
-sessionInfo()
 ```
 
 
@@ -1542,7 +1592,7 @@ library(knitr)
 opts_chunk$set(fig.align = 'center')
 ```
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE,eval=FALSE,echo=TRUE}
 library(scRNA.seq.funcs)
 library(RUVSeq)
 library(scater)
@@ -1585,7 +1635,7 @@ We will concentrate on the first two approaches.
 
 #### RUVg
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE,eval=FALSE,echo=TRUE}
 ruvg <- RUVg(counts(umi.qc), erccs, k = 1)
 assay(umi.qc, "ruvg1") <- log2(
     t(t(ruvg$normalizedCounts) / colSums(ruvg$normalizedCounts) * 1e6) + 1
@@ -1598,7 +1648,7 @@ assay(umi.qc, "ruvg10") <- log2(
 
 #### RUVs
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 scIdx <- matrix(-1, ncol = max(table(umi.qc$individual)), nrow = 3)
 tmp <- which(umi.qc$individual == "NA19098")
 scIdx[1, 1:length(tmp)] <- tmp
@@ -1620,7 +1670,7 @@ assay(umi.qc, "ruvs10") <- log2(
 ### Combat
 
 If you have an experiment with a balanced design, `Combat` can be used to eliminate batch effects while preserving biological effects by specifying the biological effects using the `mod` parameter. However the `Tung` data contains multiple experimental replicates rather than a balanced design so using `mod1` to preserve biological variability will result in an error. 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE,eval=FALSE,echo=TRUE}
 combat_data <- logcounts(umi.qc)
 mod_data <- as.data.frame(t(combat_data))
 # Basic batch removal
@@ -1642,7 +1692,7 @@ __Exercise 1__
 
 Perform `ComBat` correction accounting for total features as a co-variate. Store the corrected matrix in the `combat_tf` slot.
 
-```{r eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE,eval=FALSE,echo=TRUE}
 assay(umi.qc, "combat_tf") <- ComBat(
     dat = t(mod_data), 
     batch = factor(umi.qc$batch), 
@@ -1656,7 +1706,7 @@ assay(umi.qc, "combat_tf") <- ComBat(
 `mnnCorrect` [@Haghverdi2017-vh] assumes that each batch shares at least one biological condition with each other batch. Thus it works well for a variety of balanced experimental designs. However, the `Tung` data contains multiple replicates for each invidividual rather than balanced batches, thus we will normalized each individual separately. Note that this will remove batch effects between batches within the same individual but not the batch effects between batches in different individuals, due to the confounded experimental design. 
 
 Thus we will merge a replicate from each individual to form three batches. 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 do_mnn <- function(data.qc) {
     batch1 <- logcounts(data.qc[, data.qc$replicate == "r1"])
     batch2 <- logcounts(data.qc[, data.qc$replicate == "r2"])
@@ -1712,7 +1762,7 @@ assay(umi.qc, "mnn") <- cbind(indi1, indi2, indi3)
 ### GLM
 A general linear model is a simpler version of `Combat`. It can correct for batches while preserving biological effects if you have a balanced design. In a confounded/replicate design biological effects will not be fit/preserved. Similar to `mnnCorrect` we could remove batch effects from each individual separately in order to preserve biological (and technical) variance between individuals. For demonstation purposes we will naively correct all cofounded batch effects: 
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 glm_fun <- function(g, batch, indi) {
   model <- glm(g ~ batch + indi)
   model$coef[1] <- 0 # replace intercept with 0 to preserve reference batch.
@@ -1733,7 +1783,7 @@ __Exercise 2__
 
 Perform GLM correction for each individual separately. Store the final corrected matrix in the `glm_indi` slot.
 
-```{r, echo=FALSE}
+```{r, echo=TRUE,eval=FALSE}
 glm_fun1 <- function(g, batch) {
   model <- glm(g ~ batch)
   model$coef[1] <- 0 # replace intercept with 0 to preserve reference batch.
@@ -1763,7 +1813,7 @@ Harmony [Korsunsky2018fast] is a newer batch correction method, which is designe
 
 Seeing how the end result of Harmony is an altered dimensional reduction space created on the basis of PCA, we plot the obtained manifold here and exclude it from the rest of the follow-ups in the section.
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 umi.qc.endog = umi.qc[endog_genes,]
 umi.qc.endog = runPCA(umi.qc.endog, exprs_values = 'logcounts', ncomponents = 20)
 pca <- as.matrix(umi.qc.endog@reducedDims@listData[["PCA"]])
@@ -1778,6 +1828,9 @@ plotReducedDim(
     shape_by = "individual"
 )
 ```
+```{r}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-10-1.png")
+```
 
 ### How to evaluate and compare confounder removal strategies
 
@@ -1791,7 +1844,7 @@ corresponds to different biological samples (individuals). Separation of biologi
 interspersed batches indicates that technical variation has been
 removed. We always use log2-cpm normalized data to match the assumptions of PCA.
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 for(n in assayNames(umi.qc)) {
     tmp <- runPCA(
         umi.qc[endog_genes, ],
@@ -1808,6 +1861,20 @@ for(n in assayNames(umi.qc)) {
     )
 }
 ```
+```{r,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-1.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-2.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-3.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-4.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-5.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-6.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-7.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-8.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-9.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-10.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-11.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-11-12.png")
+```
 
 __Exercise 3__
 
@@ -1817,7 +1884,7 @@ Consider different `ks` for RUV normalizations. Which gives the best results?
 
 We can also examine the effectiveness of correction using the relative log expression (RLE) across cells to confirm technical noise has been removed from the dataset. Note RLE only evaluates whether the number of genes higher and lower than average are equal for each cell - i.e. systemic technical effects. Random technical noise between batches may not be detected by RLE.
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 res <- list()
 for(n in assayNames(umi.qc)) {
 	res[[n]] <- suppressWarnings(calc_cell_RLE(assay(umi.qc, n), erccs))
@@ -1825,14 +1892,16 @@ for(n in assayNames(umi.qc)) {
 par(mar=c(6,4,1,1))
 boxplot(res, las=2)
 ```
-
+```{r}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-12-1.png")
+```
 #### Effectiveness 3
 
 Another method to check the efficacy of batch-effect correction is to consider the intermingling of points from different batches in local subsamples of the data. If there are no batch-effects then proportion of cells from each batch in any local region should be equal to the global proportion of cells in each batch. 
 
 `kBET` [@Buttner2017-ds] takes `kNN` networks around random cells and tests the number of cells from each batch against a binomial distribution. The rejection rate of these tests indicates the severity of batch-effects still present in the data (high rejection rate = strong batch effects). `kBET` assumes each batch contains the same complement of biological groups, thus it can only be applied to the entire dataset if a perfectly balanced design has been used. However, `kBET` can also be applied to replicate-data if it is applied to each biological group separately. In the case of the Tung data, we will apply `kBET` to each individual independently to check for residual batch effects. However, this method will not identify residual batch-effects which are confounded with biological conditions. In addition, `kBET` does not determine if biological signal has been preserved. 
 
-```{r, message = FALSE}
+```{r, message = FALSE,eval=FALSE,echo=TRUE}
 compare_kBET_results <- function(sce){
     indiv <- unique(sce$individual)
     norms <- assayNames(sce) # Get all normalizations
@@ -1855,7 +1924,7 @@ compare_kBET_results <- function(sce){
 eff_debatching <- compare_kBET_results(umi.qc)
 ```
 
-```{r, message = FALSE}
+```{r, message = FALSE,eval=FALSE,echo=TRUE}
 require("reshape2")
 require("RColorBrewer")
 # Plot results
@@ -1884,7 +1953,9 @@ ggplot(dod, aes(Normalisation, Individual, fill=kBET)) +
     ) + 
     ggtitle("Effect of batch regression methods per individual")
 ```
-
+```{r}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf_files/figure-html/unnamed-chunk-14-1.png")
+```
 __Exercise 4__
 
 Why do the raw counts appear to have little batch effects?
@@ -1892,12 +1963,6 @@ Why do the raw counts appear to have little batch effects?
 ### Big Exercise
 
 Perform the same analysis with read counts of the `tung` data. Use `tung/reads.rds` file to load the reads `SCE` object. Once you have finished please compare your results to ours (next chapter). Additionally, experiment with other combinations of normalizations and compare the results.
-
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
 
 
 ## Dealing with confounders (Reads)
@@ -1907,7 +1972,7 @@ library(knitr)
 opts_chunk$set(fig.align = 'center')
 ```
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE,eval=FALSE,echo=TRUE}
 library(scRNA.seq.funcs)
 library(RUVSeq)
 library(scater)
@@ -1929,7 +1994,7 @@ reads.qc <- computeSumFactors(reads.qc, sizes = 15, clusters = qclust)
 reads.qc <- normalize(reads.qc)
 ```
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE,eval=FALSE,echo=TRUE}
 ruvg <- RUVg(counts(reads.qc), erccs, k = 1)
 assay(reads.qc, "ruvg1") <- log2(
     t(t(ruvg$normalizedCounts) / colSums(ruvg$normalizedCounts) * 1e6) + 1
@@ -1940,7 +2005,7 @@ assay(reads.qc, "ruvg10") <- log2(
 )
 ```
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 scIdx <- matrix(-1, ncol = max(table(reads.qc$individual)), nrow = 3)
 tmp <- which(reads.qc$individual == "NA19098")
 scIdx[1, 1:length(tmp)] <- tmp
@@ -1959,7 +2024,7 @@ assay(reads.qc, "ruvs10") <- log2(
 )
 ```
 
-```{r, eval = TRUE, message=FALSE, warning=FALSE}
+```{r, eval = TRUE, message=FALSE, warning=FALSE,eval=FALSE,echo=TRUE}
 combat_data <- logcounts(reads.qc)
 mod_data <- as.data.frame(t(combat_data))
 # Basic batch removal
@@ -1979,7 +2044,7 @@ assay(reads.qc, "combat") <- ComBat(
 
 __Exercise 1__
 
-```{r, eval = TRUE, echo = FALSE, message=FALSE, warning=FALSE}
+```{r, eval = TRUE, echo = FALSE, message=FALSE, warning=FALSE,eval=FALSE,echo=TRUE}
 assay(reads.qc, "combat_tf") <- ComBat(
     dat = t(mod_data), 
     batch = factor(reads.qc$batch), 
@@ -1989,7 +2054,7 @@ assay(reads.qc, "combat_tf") <- ComBat(
 )
 ```
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 do_mnn <- function(data.qc) {
     batch1 <- logcounts(data.qc[, data.qc$replicate == "r1"])
     batch2 <- logcounts(data.qc[, data.qc$replicate == "r2"])
@@ -2042,7 +2107,7 @@ assay(reads.qc, "mnn") <- cbind(indi1, indi2, indi3)
 #)
 ```
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 glm_fun <- function(g, batch, indi) {
   model <- glm(g ~ batch + indi)
   model$coef[1] <- 0 # replace intercept with 0 to preserve reference batch.
@@ -2061,7 +2126,7 @@ assay(reads.qc, "glm") <- corrected
 
 __Exercise 2__
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,eval=FALSE,echo=TRUE}
 glm_fun1 <- function(g, batch) {
   model <- glm(g ~ batch)
   model$coef[1] <- 0 # replace intercept with 0 to preserve reference batch.
@@ -2085,7 +2150,7 @@ indi3 <- do_glm(reads.qc[, reads.qc$individual == "NA19239"])
 assay(reads.qc, "glm_indi") <- cbind(indi1, indi2, indi3);
 ```
 
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 reads.qc.endog = reads.qc[endog_genes,]
 reads.qc.endog = runPCA(reads.qc.endog, exprs_values = 'logcounts', ncomponents = 20)
 pca <- as.matrix(reads.qc.endog@reducedDims@listData[["PCA"]])
@@ -2100,8 +2165,10 @@ plotReducedDim(
     shape_by = "individual"
 )
 ```
-
 ```{r}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-10-1.png")
+```
+```{r,eval=FALSE,echo=TRUE}
 for(n in assayNames(reads.qc)) {
     tmp <- runPCA(
         reads.qc[endog_genes, ],
@@ -2118,8 +2185,21 @@ for(n in assayNames(reads.qc)) {
     )
 }
 ```
-
-```{r}
+```{r,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-1.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-2.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-3.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-4.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-5.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-6.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-7.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-8.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-9.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-10.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-11.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-11-12.png")
+```
+```{r,eval=FALSE}
 res <- list()
 for(n in assayNames(reads.qc)) {
 	res[[n]] <- suppressWarnings(calc_cell_RLE(assay(reads.qc, n), erccs))
@@ -2127,8 +2207,10 @@ for(n in assayNames(reads.qc)) {
 par(mar=c(6,4,1,1))
 boxplot(res, las=2)
 ```
-
-```{r, message = FALSE}
+```{r}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-12-1.png")
+```
+```{r, message = FALSE,eval=FALSE}
 compare_kBET_results <- function(sce){
     indiv <- unique(sce$individual)
     norms <- assayNames(sce) # Get all normalizations
@@ -2151,7 +2233,7 @@ compare_kBET_results <- function(sce){
 eff_debatching <- compare_kBET_results(reads.qc)
 ```
 
-```{r, message = FALSE}
+```{r, message = FALSE,eval=FALSE}
 require("reshape2")
 require("RColorBrewer")
 # Plot results
@@ -2180,7 +2262,9 @@ ggplot(dod, aes(Normalisation, Individual, fill=kBET)) +
     ) + 
     ggtitle("Effect of batch regression methods per individual")
 ```
-
+```{r}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/remove-conf-reads_files/figure-html/unnamed-chunk-14-1.png")
+```
 ```{r echo=FALSE}
 sessionInfo()
 ```
