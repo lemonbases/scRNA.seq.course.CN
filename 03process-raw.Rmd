@@ -449,7 +449,7 @@ c(TPR, Recall)
 
 现在我们已经对测序数据进行质控，并且获得了高质量的清洗后数据，下一步将其比对到参考基因组上。如果我们想要定量基因表达或筛选样品间差异表达的基因，则通常需要某种形式的比对。
 
-短序列比对的工具有很多，目前我们主要关注两个。第一个工具是STAR [@dobin]，对于测序数据中的每一个read，STAR尝试寻找参考基因组中一个或多个最长可能序列。例如，下图所示，read(蓝色)跨越两个外显子和一个可变剪切位点(紫色)。STAR能够找出read的第一部分和序列的第一个外显子仙童，同时第二部分和序列的第二个外显子相同。因为STAR可能够以这种方式识别剪切事件，又被称为"spice aware alinger"。
+短序列比对的工具有很多，目前我们主要关注两个。第一个工具是STAR [@dobin2013star]，对于测序数据中的每一个read，STAR尝试寻找参考基因组中一个或多个最长可能序列。例如，下图所示，read(蓝色)跨越两个外显子和一个可变剪切位点(紫色)。STAR能够找出read的第一部分和序列的第一个外显子仙童，同时第二部分和序列的第二个外显子相同。因为STAR可能够以这种方式识别剪切事件，又被称为"spice aware alinger"。
 
 ```{r, out.width = '80%', fig.cap="STAR比对示意图, 来自Dobin et al.",fig.align='center',echo=FALSE}
 knitr::include_graphics("figures/STAR_explanation.png")
