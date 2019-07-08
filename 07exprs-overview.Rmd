@@ -916,17 +916,17 @@ plotPCA(
     size_by = "total_features_by_counts"
 )
 ```
-```{r confound-pca, fig.cap = "PCA plot of the tung data",echo=FALSE}
+```{r fig.cap = "PCA plot of the tung data",echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/confounders_files/figure-html/confound-pca-1.png")
 ```
 
-`scater` allows one to identify principal components that correlate with experimental and QC variables of interest (it ranks principle components by $R^2$ from a linear model regressing PC value against the variable of interest).
+`scater`可以识别与感兴趣的实验/QC变量相关的主成分，通过构建组成分值和感兴趣变量的回归模型，按照$R^2$对主成分进行排序。
 
-Let's test whether some of the variables correlate with any of the PCs.
+测试一些变量是否与主成分相关。
 
-#### Detected genes
+#### 检测的基因
 
-```{r confound-find-pcs-total-features, fig.cap = "PC correlation with the number of detected genes", fig.asp=1}
+```{r, eval=FALSE}
 logcounts(umi.qc) <- assay(umi.qc, "logcounts_raw")
 plotExplanatoryPCs(
   umi.qc[endog_genes, ],
@@ -934,14 +934,17 @@ plotExplanatoryPCs(
 )
 logcounts(umi.qc) <- NULL
 ```
+```{r confound-find-pcs-total-features, fig.cap = "PC correlation with the number of detected genes", fig.asp=1,echo=FALSE}
+logcounts(umi.qc) <- assay(umi.qc, "logcounts_raw")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/confounders_files/figure-html/confound-find-pcs-total-features-1.png")
+```
+实际上，可以看出`PC1`几乎可以完全用检测到的基因数来解释。实际上，在上述的PCA图中可以看到，这是scRNA-seq分析中著名的问题，详见[这里](https://academic.oup.com/biostatistics/article/19/4/562/4599254)。
 
-Indeed, we can see that `PC1` can be almost completely explained by the number of detected genes. In fact, it was also visible on the PCA plot above. This is a well-known issue in scRNA-seq and was described [here](http://biorxiv.org/content/early/2015/12/27/025528).
+### 解释变量
 
-### Explanatory variables
+`scater`通过拟合每个基因表达值和相应变量的回归模型计算变量的边际$R^2$，下图显示变量的基因边际$R^2$值的密度图。
 
-`scater` can also compute the marginal $R^2$ for each variable when fitting a linear model regressing expression values for each gene against just that variable, and display a density plot of the gene-wise marginal $R^2$ values for the variables.
-
-```{r confound-find-expl-vars, fig.cap = "Explanatory variables"}
+```{r eval=FALSE}
 plotExplanatoryVariables(
     umi.qc[endog_genes, ],
     exprs_values = "logcounts_raw",
@@ -955,30 +958,24 @@ plotExplanatoryVariables(
     )
 )
 ```
+```{r confound-find-expl-vars, fig.cap = "Explanatory variables",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/confounders_files/figure-html/confound-find-expl-vars-1.png")
+```
+该分析表明，检测到的基因数目以及测序深度(number of counts)对许多基因具有实质性的解释力，因此在标准化步骤或在下游统计模型中需要考虑这些变量。ERCC的表达似乎也是一个重要的解释变量，上图的一个显著特征是批次效应比个体具有更高的解释效力。这告诉我们数据的技术和生物变异是什么？
 
-This analysis indicates that the number of detected genes (again) and also the sequencing depth (number of counts) have substantial explanatory power for many genes, so these variables are good candidates for conditioning out in a normalisation step, or including in downstream statistical models. Expression of ERCCs also appears to be an important explanatory variable and one notable feature of the above plot is that batch explains more than individual. What does that tell us about the technical and biological variability of the data?
+### 其它混淆因子
 
-### Other confounders
+除了校正批次效应，还需要考虑其它因素，这同样需要外部信息。一种流行的方法是[scLVM](https://github.com/PMBio/scLVM)，其识别和去除细胞周期或凋亡等过程的影响。
 
-In addition to correcting for batch, there are other factors that one
-may want to compensate for. As with batch correction, these
-adjustments require extrinsic information. One popular method is
-[scLVM](https://github.com/PMBio/scLVM) which allows you to identify
-and subtract the effect from processes such as cell-cycle or
-apoptosis.
+此外，protocols在转录本覆盖率，**A/T**平均含量偏差，捕获短转录本效率方面具有差异，理想情况下，希望校正所有误差。
 
-In addition, protocols may differ in terms of their coverage of each transcript, 
-their bias based on the average content of __A/T__ nucleotides, or their ability to capture short transcripts.
-Ideally, we would like to compensate for all of these differences and biases.
+### 练习
 
-### Exercise
+使用Blischak数据中read counts执行相同的分析，使用`tung/reads.rds`文件导入SCESet对象，完成分析后将结果与我们的相比较(见下一章)。
 
-Perform the same analysis with read counts of the Blischak data. Use `tung/reads.rds` file to load the reads SCESet object. Once you have finished please compare your results to ours (next chapter).
+## 识别READS中混淆因子
 
-
-## Identifying confounding factors (Reads)
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=TRUE, message=FALSE, warning=FALSE,eval=FALSE}
 library(scater, quietly = TRUE)
 library(knitr)
 options(stringsAsFactors = FALSE)
@@ -988,7 +985,7 @@ reads.qc <- reads[rowData(reads)$use, colData(reads)$use]
 endog_genes <- !rowData(reads.qc)$is_feature_control
 ```
 
-```{r confound-pca-reads, fig.cap = "PCA plot of the tung data"}
+```{r,eval=FALSE}
 tmp <- runPCA(
   reads.qc[endog_genes, ],
   exprs_values = "logcounts_raw"
@@ -999,8 +996,10 @@ plotPCA(
     size_by = "total_features_by_counts"
 )
 ```
-
-```{r confound-find-pcs-total-features-reads, fig.cap = "PC correlation with the number of detected genes", fig.asp=1}
+```{r confound-pca-reads, fig.cap = "PCA plot of the tung data",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/confounders-reads_files/figure-html/confound-pca-reads-1.png")
+```
+```{r eval=FALSE}
 logcounts(reads.qc) <- assay(reads.qc, "logcounts_raw")
 plotExplanatoryPCs(
   reads.qc[endog_genes, ],
@@ -1008,8 +1007,11 @@ plotExplanatoryPCs(
 )
 logcounts(reads.qc) <- NULL
 ```
+```{r confound-find-pcs-total-features-reads, fig.cap = "PC correlation with the number of detected genes", fig.asp=1,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/confounders-reads_files/figure-html/confound-find-pcs-total-features-reads-1.png")
+```
 
-```{r confound-find-expl-vars-reads, fig.cap = "Explanatory variables"}
+```{r eval=FALSE}
 plotExplanatoryVariables(
     reads.qc[endog_genes, ],
     exprs_values = "logcounts_raw",
@@ -1023,10 +1025,13 @@ plotExplanatoryVariables(
     )
 )
 ```
+```{r confound-find-expl-vars-reads, fig.cap = "Explanatory variables",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/confounders-reads_files/figure-html/confound-find-expl-vars-reads-1.png")
+```
 
-## Normalization theory
+## 标准化理论
 
-### Introduction
+### 介绍
 
 ```{r, echo=FALSE}
 library(scRNA.seq.funcs)
@@ -1042,27 +1047,21 @@ insert_fun('calc_cell_RLE')
 insert_fun('Down_Sample_Matrix')
 ```
 
-In the previous chapter we identified important confounding factors and explanatory variables. `scater` allows one to account for these variables in subsequent statistical models or to condition them out using `normaliseExprs()`, if so desired. This can be done by providing a design matrix to `normaliseExprs()`. We are not covering this topic here, but you can try to do it yourself as an exercise.
+在前一章中，我们识别了重要的混淆因子和解释变量。`scater`可以在后续统计模型中考虑这些变量，或者如果需要，使用`normaliseExprs()`来调节它们。这可以通过提供设计矩阵给`normaliseExprs()`来完成。我们这里没有涉及这个主题，但你可以尝试自己做这个练习。
 
-Instead we will explore how simple size-factor normalisations correcting for library size can remove the effects of some of the confounders and explanatory variables.
+相反，我们将探索校正文库大小的简单尺寸因子标准化如何消除某些混淆因素和解释变量的影响。
 
-### Library size
+### 文库大小
 
-Library sizes vary because scRNA-seq data is often sequenced on highly multiplexed platforms the total reads which are derived from each cell may differ substantially. Some quantification methods
-(eg. [`Cufflinks`](http://cole-trapnell-lab.github.io/cufflinks/), [`RSEM`](http://deweylab.github.io/RSEM/)) incorporated library size when determining gene expression estimates thus do not require this normalization.
+因为scRNA-seq数据通常在highly multiplexed平台测序，来自每个细胞的总reads数可能显著不同，从而导致文库大小差异。一些定量方法(比如，[`Cufflinks`](http://cole-trapnell-lab.github.io/cufflinks/), [`RSEM`](http://deweylab.github.io/RSEM/)) 在估计基因表达时考虑文库大小，因此不需要再对文库大小进行标准化。
 
-However, if another quantification method was used then library size must be corrected for by multiplying or dividing each column of the expression matrix by a "normalization factor" which is an estimate of the library size relative to the other cells. Many methods to correct for library size have been developped for bulk RNA-seq and can be equally applied to scRNA-seq (eg. __UQ__, __SF__, __CPM__, __RPKM__, __FPKM__, __TPM__). 
+然而，如果使用其它的定量方法，则必须将表达矩阵中每列乘以或除以"归一化因子"来校正文库大小，其中归一化因子是相对于其它细胞的文库大小估计。用于bulk RNA-seq文库大小校正的方法也可应用于scRNA-seq(比如, __UQ__, __SF__, __CPM__, __RPKM__, __FPKM__, __TPM__).
 
-
-### Normalisations
+### 标准化
 
 #### CPM
 
-The simplest way to normalize this data is to convert it to counts per
-million (__CPM__) by dividing each column by its total then multiplying by
-1,000,000. Note that spike-ins should be excluded from the
-calculation of total expression in order to correct for total cell RNA
-content, therefore we will only use endogenous genes. Example of a __CPM__ function in `R`:
+数据标准化最简单的方式是将每列除以总数再乘以1,000,000，转化为counts per million(__CPM__)。注意，校正细胞内RNA总量时，应该排除spike-ins，只使用内源基因。`R`中**CPM**函数示例：
 
 ```{r calc_cpm-source, eval=FALSE,echo=TRUE}
 calc_cpm <-
@@ -1073,11 +1072,11 @@ function (expr_mat, spikes = NULL)
 }
 ```
 
-One potential drawback of __CPM__ is if your sample contains genes that are both very highly expressed and differentially expressed across the cells. In this case, the total molecules in the cell may depend of whether such genes are on/off in the cell and normalizing by total molecules may hide the differential expression of those genes and/or falsely create differential expression for the remaining genes. 
+__CPM__ 一个缺点是如果样本含有在细胞中高表达和差异表达的基因，细胞中的总分子数可能取决于这些基因是否在细胞中开/关状态并且通过总分子数标准化可能隐藏那些基因的差异表达和/或错误地为剩余基因产生差异表达。
 
-__Note__ __RPKM__, __FPKM__ and __TPM__ are variants on __CPM__ which further adjust counts by the length of the respective gene/transcript.
+__注意__ __RPKM__, __FPKM__ 和 __TPM__ 是 __CPM__ 的变形，其根据相应基因/转录本的长度调节counts。
 
-To deal with this potentiality several other measures were devised.
+为解决上述问题，设计了其它几种方法：
 
 #### RLE (SF)
 
@@ -1411,9 +1410,9 @@ __Note__ The `PCA` looks for differences between cells. Gene length is the same 
 
 Perform the same analysis with read counts of the `tung` data. Use `tung/reads.rds` file to load the reads `SCE` object. Once you have finished please compare your results to ours (next chapter).
 
-## Normalization practice (Reads)
+## Reads标准化练习
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE,echo=TRUE}
+```{r eval=FALSE, message=FALSE, warning=FALSE,echo=TRUE}
 library(scRNA.seq.funcs)
 library(scater)
 library(scran)
@@ -1426,7 +1425,7 @@ reads.qc <- reads[rowData(reads)$use, colData(reads)$use]
 endog_genes <- !rowData(reads.qc)$is_feature_control
 ```
 
-```{r norm-pca-raw-reads, fig.cap = "PCA plot of the tung data",echo=TRUE}
+```{r eval=FALSE}
 tmp <- runPCA(
   reads.qc[endog_genes, ],
   exprs_values = "logcounts_raw"
@@ -1438,8 +1437,12 @@ plotPCA(
     shape_by = "individual"
 )
 ```
+```{r norm-pca-raw-reads, fig.cap = "PCA plot of the tung data",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-pca-raw-reads-1.png")
+```
 
-```{r norm-pca-cpm-reads, fig.cap = "PCA plot of the tung data after CPM normalisation",echo=TRUE}
+
+```{r eval=FALSE}
 logcounts(reads.qc) <- log2(calculateCPM(reads.qc, use_size_factors = FALSE) + 1)
 plotPCA(
     reads.qc[endog_genes, ],
@@ -1448,7 +1451,10 @@ plotPCA(
     shape_by = "individual"
 )
 ```
-```{r norm-ours-rle-cpm-reads, fig.cap = "Cell-wise RLE of the tung data", warning=FALSE,echo=TRUE}
+```{r norm-pca-cpm-reads, fig.cap = "PCA plot of the tung data after CPM normalisation",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-pca-cpm-reads-1.png")
+```
+```{r eval=FALSE}
 plotRLE(
     reads.qc[endog_genes, ], 
     exprs_values = "logcounts_raw",
@@ -1460,8 +1466,12 @@ plotRLE(
     colour_by = "batch"
 )
 ```
+```{r norm-ours-rle-cpm-reads, fig.cap = "Cell-wise RLE of the tung data",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-ours-rle-cpm-reads-1.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-ours-rle-cpm-reads-2.png")
+```
 
-```{r norm-pca-lsf-umi, fig.cap = "PCA plot of the tung data after LSF normalisation",echo=TRUE}
+```{r eval=FALSE}
 qclust <- quickCluster(reads.qc, min.size = 30)
 reads.qc <- computeSumFactors(reads.qc, sizes = 15, clusters = qclust)
 reads.qc <- normalize(reads.qc)
@@ -1472,8 +1482,11 @@ plotPCA(
     shape_by = "individual"
 )
 ```
+```{r norm-pca-lsf-umi, fig.cap = "PCA plot of the tung data after LSF normalisation",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-pca-lsf-umi-1.png")
+```
 
-```{r norm-ours-rle-scran-reads, fig.cap = "Cell-wise RLE of the tung data",echo=TRUE}
+```{r eval=FALSE}
 plotRLE(
     reads.qc[endog_genes, ], 
     exprs_values = "logcounts_raw",
@@ -1485,8 +1498,12 @@ plotRLE(
     colour_by = "batch"
 )
 ```
+```{r norm-ours-rle-scran-reads, fig.cap = "Cell-wise RLE of the tung data",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-ours-rle-scran-reads-1.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-ours-rle-scran-reads-2.png")
+```
 
-```{r norm-pca-downsample-reads, fig.cap = "PCA plot of the tung data after downsampling",echo=TRUE}
+```{r eval=TRUE}
 logcounts(reads.qc) <- log2(Down_Sample_Matrix(counts(reads.qc)) + 1)
 plotPCA(
     reads.qc[endog_genes, ],
@@ -1495,7 +1512,10 @@ plotPCA(
     shape_by = "individual"
 )
 ```
-```{r norm-ours-rle-downsample-reads, fig.cap = "Cell-wise RLE of the tung data",echo=TRUE}
+```{r norm-pca-downsample-reads, fig.cap = "PCA plot of the tung data after downsampling",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-pca-downsample-reads-1.png")
+```
+```{r eval=TRUE}
 plotRLE(
     reads.qc[endog_genes, ], 
     exprs_values = "logcounts_raw",
@@ -1506,6 +1526,10 @@ plotRLE(
     exprs_values = "logcounts",
     colour_by = "batch"
 )
+```
+```{r norm-ours-rle-downsample-reads, fig.cap = "Cell-wise RLE of the tung data",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-ours-rle-downsample-reads-1.png")
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-ours-rle-downsample-reads-2.png")
 ```
 
 ```{r,eval=FALSE,echo=TRUE}
@@ -1538,7 +1562,7 @@ eff_length <-
 tpm(reads.qc.ann) <- log2(calculateTPM(reads.qc.ann, eff_length) + 1)
 ```
 
-```{r norm-pca-tpm-reads-1, fig.cap = "PCA plot of the tung data after TPM normalisation",eval=FALSE,echo=TRUE}
+```{r eval=FALSE}
 tmp <- runPCA(
   reads.qc.ann,
   exprs_values = "tpm",
@@ -1550,8 +1574,7 @@ plotPCA(
     shape_by = "individual"
 )
 ```
-
-```{r norm-pca-tpm-reads-2, fig.cap = "PCA plot of the tung data after TPM normalisation"}
+```{r norm-pca-tpm-reads-1, fig.cap = "PCA plot of the tung data after TPM normalisation",echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/exprs-norm-reads_files/figure-html/norm-pca-tpm-reads-1.png")
 ```
 
