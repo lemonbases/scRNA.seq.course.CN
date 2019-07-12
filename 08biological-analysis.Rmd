@@ -2,29 +2,22 @@
 output: html_document
 ---
 
-# Biological Analysis
+# 生物学分析
 
-## Clustering Introduction
+## 聚类介绍
 
 ```{r, echo=FALSE}
 library(knitr)
 opts_chunk$set(fig.align = "center", echo=FALSE)
 ```
 
-Once we have normalized the data and removed confounders we can carry out analyses that are relevant to the biological questions at hand. The exact nature of the analysis depends on the dataset. Nevertheless, there are a few aspects that are useful in a wide range of contexts and we will be discussing some of them in the next few chapters. We will start with the clustering of scRNA-seq data.
+对数据进行了标准化并移除了混淆因子后，就可以进行与手头的生物学问题相关的分析。分析的性质取决于数据集。 然而，一些方面在广泛的背景下有用，我们将在接下来的几章中讨论其中的一些方面。从scRNA-seq数据的聚类开始。
 
-### Introduction
+### 介绍
 
-One of the most promising applications of scRNA-seq is _de novo_ discovery
-and annotation of cell-types based on transcription
-profiles. Computationally, this is a hard problem as it amounts to
-__unsupervised clustering__. That is, we need to identify groups of
-cells based on the similarities of the transcriptomes without any
-prior knowledge of the labels. Moreover, in most situations we do not even know the number of clusters _a priori_. The problem is made even more challenging
-due to the high level of noise (both technical and biological) and the large number of dimensions
-(i.e. genes). 
+scRNA-seq最有希望的应用之一是基于转录谱的*de novo*发现和注释细胞类型。在计算上，这是一个难题，因为它相当于**非监督聚类**。 也就是说，我们需要根据转录组的相似性识别细胞群，不需要对细胞类型的任何先验知识。 此外，在大多数情况下，我们甚至不知道*先验*集群的数量。由于噪音（技术和生物）和高维度（比如基因），问题变得更具挑战性。
 
-### Dimensionality reductions
+### 降维
 
 When working with large datasets, it can often be beneficial to apply
 some sort of dimensionality reduction method. By projecting
@@ -33,13 +26,13 @@ significantly reduce the amount of noise. An additional benefit is
 that it is typically much easier to visualize the data in a 2 or
 3-dimensional subspace. We have already discussed PCA (chapter \@ref(visual-pca)) and t-SNE (chapter \@ref(visual-pca)).
 
-### Clustering methods
+### 聚类方法
 
 __Unsupervised clustering__ is useful in many different applications and
 it has been widely studied in machine learning. Some of the most
 popular approaches are __hierarchical clustering__, __k-means clustering__ and __graph-based clustering__.
 
-#### Hierarchical clustering
+#### 层次聚类
 
 In [hierarchical clustering](https://en.wikipedia.org/wiki/Hierarchical_clustering), one can use either a bottom-up or a
 top-down approach. In the former case, each cell is initially assigned to
@@ -71,7 +64,7 @@ knitr::include_graphics("figures/k-means.png")
 
 Most methods for scRNA-seq analysis includes a _k_-means step at some point.
 
-#### Graph-based methods
+#### 基于图的方法
 
 Over the last two decades there has been a lot of interest in
 analyzing networks in various domains. One goal is to identify groups
@@ -84,7 +77,7 @@ knitr::include_graphics("figures/graph_network.jpg")
 Some of these methods can be applied
 to scRNA-seq data by building a graph where each node represents a cell. Note that constructing the graph and assigning weights to the edges is not trivial. One advantage of graph-based methods is that some of them are very efficient and can be applied to networks containing millions of nodes.
 
-### Challenges in clustering
+### 聚类的挑战
 
 * What is the number of clusters _k_?
 * What is a cell type?
@@ -124,12 +117,7 @@ To compare two sets of clustering labels we can use [adjusted Rand index](https:
 
 ## Clustering example {#clust-methods}
 
-```{r, echo=FALSE}
-library(knitr)
-opts_chunk$set(fig.align = "center")
-```
-
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 library(pcaMethods)
 library(SC3)
 library(scater)
@@ -144,20 +132,40 @@ To illustrate clustering of scRNA-seq data, we consider the `Deng` dataset of ce
 ### Deng dataset
 
 Let's load the data and look at it:
-`r
+```{r eval=FALSE,echo=TRUE}
 deng <- readRDS("data/deng/deng-reads.rds")
 deng
-`
+## class: SingleCellExperiment 
+## dim: 22431 268 
+## metadata(0):
+## assays(2): counts logcounts
+## rownames(22431): Hvcn1 Gbp7 ... Sox5 Alg11
+## rowData names(10): feature_symbol is_feature_control ...
+##   total_counts log10_total_counts
+## colnames(268): 16cell 16cell.1 ... zy.2 zy.3
+## colData names(30): cell_type2 cell_type1 ... pct_counts_ERCC
+##   is_cell_control
+## reducedDimNames(0):
+## spikeNames(1): ERCC
+```
 
 Let's look at the cell type annotation:
-`r
+```{r eval=FALSE,echo=TRUE}
 table(colData(deng)$cell_type2)
-`
+## 
+##     16cell      4cell      8cell early2cell earlyblast  late2cell 
+##         50         14         37          8         43         10 
+##  lateblast   mid2cell   midblast         zy 
+##         30         12         60          4
+```
 
 A simple PCA analysis already separates some strong cell types and provides some insights in the data structure:
-`r
+```{r,eval=FALSE,echo=TRUE}
 plotPCA(deng, colour_by = "cell_type2")
-`
+```
+```{r,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/unnamed-chunk-5-1.png")
+```
 As you can see, the early cell types separate quite well, but the three blastocyst timepoints are more difficult to distinguish.
 
 ### SC3
@@ -165,51 +173,65 @@ As you can see, the early cell types separate quite well, but the three blastocy
 Let's run `SC3` clustering on the Deng data. The advantage of the `SC3` is that it can directly ingest a `SingleCellExperiment` object.
 
 Now let's image we do not know the number of clusters _k_ (cell types). `SC3` can estimate a number of clusters for you:
-`r
+```{r eval=FALSE,echo=TRUE}
 deng <- sc3_estimate_k(deng)
 metadata(deng)$sc3$k_estimation
-`
+```
 
 Interestingly, the number of cell types predicted by `SC3` is smaller than in the original data annotation. However, early, mid and late stages of different cell types together, we will have exactly 6 cell types. We store the merged cell types in `cell_type1` column of the `colData` slot:
-`r
+```{r,eval=FALSE,echo=TRUE}
 plotPCA(deng, colour_by = "cell_type1")
-`
+```
+```{r,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/unnamed-chunk-7-1.png")
+```
 
 Now we are ready to run `SC3` (we also ask it to calculate biological properties of the clusters): 
-`r
+```{r eval=FALSE,echo=TRUE}
 deng <- sc3(deng, ks = 10, biology = TRUE, n_cores = 1)
-`
+```
 
 `SC3` result consists of several different outputs (please look in [@Kiselev2016-bq] and [SC3 vignette](http://bioconductor.org/packages/release/bioc/vignettes/SC3/inst/doc/my-vignette.html) for more details). Here we show some of them:
 
 Consensus matrix:
-`r
+```{r,eval=FALSE,echo=TRUE}
 sc3_plot_consensus(deng, k = 10, show_pdata = "cell_type2")
-`
-
+```
+```{r,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/unnamed-chunk-9-1.png")
+```
 Silhouette plot:
-`r
+```{r eval=FALSE,echo=TRUE}
 sc3_plot_silhouette(deng, k = 10)
-`r
-
+```
+```{r,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/unnamed-chunk-10-1.png")
+```
 Heatmap of the expression matrix:
-`r
+```{r eval=FALSE,echo=TRUE}
 sc3_plot_expression(deng, k = 10, show_pdata = "cell_type2")
-`
-
+```
+```{r,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/unnamed-chunk-11-1.png")
+```
 Identified marker genes:
-`r
+```{r eval=FALSE,echo=TRUE}
 sc3_plot_markers(deng, k = 10, show_pdata = "cell_type2")
-`
-
+```
+```{r,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/unnamed-chunk-12-1.png")
+```
 PCA plot with highlighted `SC3` clusters:
-```{r}
+```{r,eval=FALSE,echo=TRUE}
 plotPCA(deng, colour_by = "sc3_10_clusters")
 ```
-
+```{r,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/unnamed-chunk-13-1.png")
+```
 Compare the results of `SC3` clustering with the original publication cell type labels:
-```{r}
+```{r eval=FALSE,echo=TRUE}
 adjustedRandIndex(colData(deng)$cell_type2, colData(deng)$sc3_10_clusters)
+## [1] 0.7721292
 ```
 
 __Note__ `SC3` can also be run in an interactive `Shiny` session:
@@ -232,9 +254,12 @@ __Note__ Due to direct calculation of distances `SC3` becomes very slow when the
 ### tSNE + kmeans
 
 [tSNE](https://lvdmaaten.github.io/tsne/) plots that we saw before (\@ref(visual-tsne)) when used the __scater__ package are made by using the [Rtsne](https://cran.r-project.org/web/packages/Rtsne/index.html) and [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html) packages. Here we will do the same:
-```{r clust-tsne, fig.cap = "tSNE map of the patient data"}
+```{r, eval=FALSE,echo=TRUE}
 deng <- runTSNE(deng, rand_seed = 1)
 plotTSNE(deng)
+```
+```{r, clust-tsne, fig.cap = "tSNE map of the patient data",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/clust-tsne-1.png")
 ```
 
 Note that all points on the plot above are black. This is different from what we saw before, when the cells were coloured based on the annotation. Here we do not have any annotation and all cells come from the same batch, therefore all dots are black.
@@ -242,17 +267,19 @@ Note that all points on the plot above are black. This is different from what we
 Now we are going to apply _k_-means clustering algorithm to the cloud of points on the tSNE map. How many groups do you see in the cloud?
 
 We will start with $k=8$:
-```{r clust-tsne-kmeans2, fig.cap = "tSNE map of the patient data with 8 colored clusters, identified by the k-means clustering algorithm"}
+```{r eval=FALSE,echo=TRUE}
 colData(deng)$tSNE_kmeans <- as.character(kmeans(deng@reducedDims$TSNE, centers = 8)$clust)
 plotTSNE(deng, colour_by = "tSNE_kmeans")
 ```
-
+```{r, clust-tsne-kmeans2, fig.cap = "tSNE map of the patient data with 8 colored clusters, identified by the k-means clustering algorithm",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/clust-tsne-kmeans2-1.png")
+```
 __Exercise 7__: Make the same plot for $k=10$.
 
 __Exercise 8__: Compare the results between `tSNE+kmeans` and the original publication cell types. Can the results be improved by changing the `perplexity` parameter?
 
 __Our solution__:
-```{r, echo=FALSE}
+```{r, eval=FALSE, echo=FALSE}
 colData(deng)$tSNE_kmeans <- as.character(kmeans(deng@reducedDims$TSNE, centers = 10)$clust)
 adjustedRandIndex(colData(deng)$cell_type2, colData(deng)$tSNE_kmeans)
 ```
@@ -265,12 +292,12 @@ overview of the solutions, we need to run the methods multiple times. `SC3` is a
 
 As mentioned in the previous chapter [SINCERA](https://research.cchmc.org/pbge/sincera.html) is based on hierarchical clustering. One important thing to keep in mind is that it performs a gene-level z-score transformation before doing clustering:
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 # use the same gene filter as in SC3
 input <- logcounts(deng[rowData(deng)$sc3_gene_filter, ])
 ```
 
-```{r, echo=TRUE, fig.height=7, fig.width=7}
+```{r, eval=FALSE,echo=TRUE}
 # perform gene-by-gene per-sample z-score transformation
 dat <- apply(input, 1, function(y) scRNA.seq.funcs::z.transform.helper(y))
 # hierarchical clustering
@@ -279,7 +306,7 @@ hc <- hclust(dd, method = "average")
 ```
 
 If the number of cluster is not known [SINCERA](https://research.cchmc.org/pbge/sincera.html) can identify __k__ as the minimum height of the hierarchical tree that generates no more than a specified number of singleton clusters (clusters containing only 1 cell)
-```{r, echo=TRUE}
+```{r, eval=FALSE,echo=TRUE}
 num.singleton <- 0
 kk <- 1
 for (i in 2:dim(dat)[2]) {
@@ -293,10 +320,11 @@ for (i in 2:dim(dat)[2]) {
     }
 }
 cat(kk)
+## 6
 ```
 
 Let's now visualize the SINCERA results as a heatmap:
-```{r clust-sincera, fig.cap = "Clustering solutions of SINCERA method using found $k$"}
+```{r eval=FALSE,echo=TRUE}
 pheatmap(
     t(dat),
     cluster_cols = hc,
@@ -305,29 +333,22 @@ pheatmap(
     show_rownames = FALSE
 )
 ```
-
+```{r, clust-sincera, fig.cap = "Clustering solutions of SINCERA method using found $k$",echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/clustering_files/figure-html/clust-sincera-1.png")
+```
 __Exercise 10__: Compare the results between `SINCERA` and the original publication cell types.
 
 __Our solution__:
-```{r, echo=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 colData(deng)$SINCERA <- as.character(cutree(hc, k = kk))
 adjustedRandIndex(colData(deng)$cell_type2, colData(deng)$SINCERA)
 ```
 
 __Exercise 11__: Is using the singleton cluster criteria for finding __k__ a good idea?
 
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
 
 ## Feature Selection
 
-```{r, echo=FALSE}
-library(knitr)
-opts_chunk$set(fig.align = "center")
-```
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 library(scRNA.seq.funcs)
 library(matrixStats)
@@ -362,7 +383,7 @@ are expressed at different levels across groups.
 
 For this section we will continue working with the Deng data. 
 
-```{r}
+```{r echo=TRUE, eval=FALSE}
 deng <- readRDS("data/deng/deng-reads.rds")
 celltype_labs <- colData(deng)$cell_type2
 cell_colors <- brewer.pal(max(3,length(unique(celltype_labs))), "Set3")
@@ -379,7 +400,7 @@ M3Drop feature selection is runs direction on a normalized (but not log-transfor
 expression matrix. This can be extracted from our SingleCellExperiment object using the 
 command below. 
 
-```{r}
+```{r echo=TRUE, eval=FALSE}
 expr_matrix <- M3Drop::M3DropConvertData(deng)
 ```
 
@@ -393,7 +414,7 @@ if you specify whether the matrix is raw counts, or log transformed. Check the m
 ```
 
 __Exercise 1__: Confirm that the conversion function has removed undetected genes:
-```{r, include=FALSE}
+```{r, echo=TRUE, eval=FALSE}
 nrow(counts(deng)) - nrow(expr_matrix)
 summary( rowSums(counts(deng))[! rownames(counts(deng)) %in% rownames(expr_matrix) ] )
 ```
@@ -424,7 +445,7 @@ __Exercise 2__
 Using the functions rowMeans and rowVars to plot the relationship between mean expression
 and variance for all genes in this dataset. (Hint: use log="xy" to plot on a log-scale).
 
-```{r, echo=FALSE, fig.width = 8.5, fig.height = 6}
+```{r, echo=TRUE, eval=FALSE}
 plot(
     rowMeans(expr_matrix), 
     rowVars(expr_matrix), 
@@ -434,6 +455,9 @@ plot(
     ylab="Variance", 
     main=""
 )
+```
+```{r, fig.width = 8.5, fig.height = 6, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-7-1.png")
 ```
 A popular method to correct for the relationship between variance and mean expression
 was proposed by [Brennecke et al.](http://www.nature.com/nmeth/journal/v10/n11/full/nmeth.2645.html).
@@ -450,26 +474,29 @@ is the fitted technical noise model and the dashed line is the 95%
 CI. Pink dots are the genes with significant biological variability
 after multiple-testing correction.
 
-```{r, fig.width = 7, fig.height = 6}
+```{r, echo=TRUE, eval=FALSE}
 Brennecke_HVG <- BrenneckeGetVariableGenes(
     expr_matrix,
     fdr = 0.01,
     minBiolDisp = 0.5
 )
 ```
+```{r, fig.width = 7, fig.height = 6, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-8-1.png")
+```
 
 This function returns a matrix of significant genes as well as their estimated effect size (difference 
 between observed and expected coefficient of variation), and their significance as raw p.values and 
 FDR corrected q.values. For now we will just keep the names of the significant HVG genes.
 
-```{r}
+```{r echo=TRUE, eval=FALSE}
 HVG_genes <- Brennecke_HVG$Gene
 ```
 
 __Exercise 3__
 How many genes were signifcant using BrenneckeGetVariableGenes? 
 
-```{r, echo=FALSE, fig.width = 8.5, fig.height = 6}
+```{r, echo=TRUE, eval=FALSE}
 length(HVG_genes)
 ```
 #### High Dropout Genes
@@ -490,7 +517,7 @@ Because the Michaelis-Menten equation is a convex non-linear function, genes whi
 differentially expression across two or more populations of cells in our dataset will
 be shifted up/right of the Michaelis-Menten model (see Figure below).
 
-```{r, fig.width = 8.5, fig.height = 6, echo=TRUE}
+```{r, eval=FALSE,echo=TRUE}
 K <- 49
 S_sim <- 10^seq(from = -3, to = 4, by = 0.05) # range of expression values
 MM <- 1 - S_sim / (K + S_sim)
@@ -523,11 +550,14 @@ points(
     cex = 3
 )
 ```
+```{r, fig.width = 8.5, fig.height = 6, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-11-1.png")
+```
 __Note__: add `log="x"` to the `plot` call above to see how this looks on the log scale, which is used in M3Drop figures.
 
 __Exercise 4__: Produce the same plot as above with different expression levels (S1 & S2) and/or mixtures (mix).
 
-```{r, include=FALSE}
+```{r, echo=TRUE, eval=FALSE}
 plot(
     S_sim, 
     MM, 
@@ -561,13 +591,16 @@ points(
 We use M3Drop to identify significant outliers to the right of the MM
 curve. We also apply 1% FDR multiple testing correction:
 
-```{r, fig.width = 7, fig.height = 6}
+```{r, eval=FALSE,echo=TRUE}
 M3Drop_genes <- M3DropFeatureSelection(
     expr_matrix,
     mt_method = "fdr",
     mt_threshold = 0.01
 )
 M3Drop_genes <- M3Drop_genes$Gene
+```
+```{r, fig.width = 7, fig.height = 6, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-13-1.png")
 ```
 
 An alternative method is contained in the M3Drop package that is tailored specifically for
@@ -590,17 +623,20 @@ the Deng data is not UMI counts the model does not fit the noise sufficiently an
 far too many genes will be called as significant. Thus we will take the top 1500
 by effect size.
 
-```{r, fig.width=8, fig.height=5}
+```{r, eval=FALSE,echo=TRUE}
 deng_int <- NBumiConvertData(deng)
 DANB_fit <- NBumiFitModel(deng_int) # DANB is fit to the raw count matrix
 # Perform DANB feature selection
 DropFS <- NBumiFeatureSelectionCombinedDrop(DANB_fit, method="fdr", qval.thresh=0.01, suppress.plot=FALSE)
 DANB_genes <- DropFS[1:1500,]$Gene
 ```
+```{r, fig.width=8, fig.height=5, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-14-1.png")
+```
 __Exercise 5__
 How many genes were signifcant using NBumiFeatureSelectionCombinedDrop? 
 
-```{r, echo=FALSE, fig.width = 8.5, fig.height = 6}
+```{r, eval=FALSE, fig.width = 8.5, fig.height = 6}
 nrow(DropFS)
 ```
 
@@ -631,7 +667,7 @@ may be relevant to the underlying biology. However, as with gene-gene correlatio
 be susceptible to detecting systematic variation due to batch effects; thus it is recommended to plot the PCA
 results to determine those components corresponding to the biological variation rather than batch effects.
 
-```{r, fig.width=7, fig.height=6}
+```{r, eval=FALSE,echo=TRUE}
 # PCA is typically performed on log-transformed expression data
 pca <- prcomp(log(expr_matrix + 1) / log(2))
 
@@ -642,6 +678,11 @@ plot(
     pch = 16, 
     col = cell_colors[as.factor(celltype_labs)]
 ) 
+```
+```{r, fig.width=7, fig.height=6, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-17-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 # calculate loadings for components 1 and 2
 score <- rowSums(abs(pca$x[,c(1,2)])) 
 names(score) <- rownames(expr_matrix)
@@ -651,7 +692,7 @@ PCA_genes <- names(score[1:1500])
 __Exercise 6__
 Consider the top 5 principal components. Which appear to be most biologically relevant? How does the top 1,500
 features change if you consider the loadings for those components?
-```{r, include=FALSE}
+```{r, include=FALSE,echo=TRUE, eval=FALSE}
 plot(
     pca$rotation[,2], 
     pca$rotation[,3], 
@@ -675,7 +716,7 @@ PCA_genes2 = names(score[1:1500])
 We can check whether the identified features really do represent genes differentially expressed between
 cell-types in this dataset.
 
-```{r, fig.width = 7, fig.height = 10}
+```{r, eval=FALSE,echo=TRUE}
 M3DropExpressionHeatmap(
     M3Drop_genes,
     expr_matrix,
@@ -683,8 +724,11 @@ M3DropExpressionHeatmap(
 )
 ```
 
+```{r, fig.width = 7, fig.height = 10, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-19-1.png")
+```
 We can also consider how consistent each feature selection method is with the others using the Jaccard Index:
-```{r}
+```{r eval=FALSE,echo=TRUE}
 J <- sum(M3Drop_genes %in% HVG_genes)/length(unique(c(M3Drop_genes, HVG_genes)))
 ```
 
@@ -747,18 +791,8 @@ colnames(Out) <- rownames(Out) <- c("M3Drop", "HVG", "Cor", "PCA", "PCA2")
 ```
 
 
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
-
 ## Pseudotime analysis
 
-```{r, echo=FALSE}
-library(knitr)
-opts_chunk$set(fig.align = "center")
-```
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 library(SingleCellExperiment)
 library(TSCAN)
@@ -836,7 +870,7 @@ knitr::include_graphics("figures/cannoodt_pseudotime_methods.png")
 
 Let us take a first look at the Deng data, without yet applying sophisticated pseudotime methods. As the plot below shows, simple PCA does a very good job of displaying the structure in these data. It is only once we reach the blast cell types ("earlyblast", "midblast", "lateblast") that PCA struggles to separate the distinct cell types.
 
-```{r data-overview}
+```{r eval=FALSE,echo=TRUE}
 deng_SCE <- readRDS("data/deng/deng-reads.rds")
 deng_SCE$cell_type2 <- factor(
     deng_SCE$cell_type2,
@@ -851,9 +885,12 @@ deng_SCE <- runPCA(deng_SCE)
 plotPCA(deng_SCE, colour_by = "cell_type2")
 ```
 
+```{r data-overview, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/data-overview-1.png")
+```
 PCA, here, provides a useful baseline for assessing different pseudotime methods. For a very naive pseudotime we can just take the co-ordinates of the first principal component.
 
-```{r pca-pseudotime}
+```{r eval=FALSE,echo=TRUE}
 deng_SCE$PC1 <- reducedDim(deng_SCE, "PCA")[,1]
 ggplot(as.data.frame(colData(deng_SCE)), aes(x = PC1, y = cell_type2, 
                               colour = cell_type2)) +
@@ -861,6 +898,9 @@ ggplot(as.data.frame(colData(deng_SCE)), aes(x = PC1, y = cell_type2,
     scale_color_tableau() + theme_classic() +
     xlab("First principal component") + ylab("Timepoint") +
     ggtitle("Cells ordered by first principal component")
+```
+```{r pca-pseudotime, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/pca-pseudotime-1.png")
 ```
 
 As the plot above shows, PC1 struggles to correctly order cells early and late in the developmental timecourse, but overall does a relatively good job of ordering cells by developmental time.   
@@ -874,11 +914,16 @@ TSCAN combines clustering with pseudotime analysis. First it clusters the cells 
 
 First we will try to use all genes to order the cells.
 
-```{r tscan-all-genes}
+```{r eval=FALSE,echo=TRUE}
 procdeng <- TSCAN::preprocess(deng)
 colnames(procdeng) <- 1:ncol(deng)
 dengclust <- TSCAN::exprmclust(procdeng, clusternum = 10)
 TSCAN::plotmclust(dengclust)
+```
+```{r tscan-all-genes, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/tscan-all-genes-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 dengorderTSCAN <- TSCAN::TSCANorder(dengclust, orderonly = FALSE)
 pseudotime_order_tscan <- as.character(dengorderTSCAN$sample_name)
 deng_SCE$pseudotime_order_tscan <- NA
@@ -890,7 +935,7 @@ Frustratingly, TSCAN only provides pseudotime values for 221 of 268 cells, silen
 
 Again, we examine which timepoints have been assigned to each state:
 
-```{r tscan-vs-truth}
+```{r eval=FALSE,echo=TRUE}
 cellLabels[dengclust$clusterid == 10]
 ggplot(as.data.frame(colData(deng_SCE)), 
        aes(x = pseudotime_order_tscan, 
@@ -900,6 +945,9 @@ ggplot(as.data.frame(colData(deng_SCE)),
     xlab("TSCAN pseudotime") + ylab("Timepoint") +
     ggtitle("Cells ordered by TSCAN pseudotime")
 
+```
+```{r tscan-vs-truth, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/tscan-vs-truth-1.png")
 ```
 
 TSCAN gets the development trajectory the "wrong way around", in the sense that later pseudotime values correspond to early timepoints and vice versa. This is not inherently a problem (it is easy enough to reverse the ordering to get the intuitive interpretation of pseudotime), but overall it would be a stretch to suggest that TSCAN performs better than PCA on this dataset. (As it is a PCA-based method, perhaps this is not entirely surprising.)
@@ -919,16 +967,21 @@ defined as a separate cell state.
 
 Unfortunately, Monocle does not work when all the genes are used, so
 we must carry out feature selection. First, we use M3Drop:
-```{r m3d-select-genes}
+```{r eval=FALSE,echo=TRUE}
 m3dGenes <- as.character(
     M3DropFeatureSelection(deng)$Gene
 )
+```
+```{r m3d-select-genes, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/m3d-select-genes-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 d <- deng[which(rownames(deng) %in% m3dGenes), ]
 d <- d[!duplicated(rownames(d)), ]
 ```
 
 Now run monocle:
-```{r monocle-all-genes, message=FALSE, warning=FALSE}
+```{r eval=FALSE,echo=TRUE}
 colnames(d) <- 1:ncol(d)
 geneNames <- rownames(d)
 rownames(d) <- 1:nrow(d)
@@ -954,9 +1007,11 @@ rownames(pseudotime_monocle) <- 1:ncol(d)
 pseudotime_order_monocle <-
     rownames(pseudotime_monocle[order(pseudotime_monocle$pseudotime), ])
 ```
-
+```{r monocle-all-genes, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/monocle-all-genes-1.png")
+```
 We can again compare the inferred pseudotime to the known sampling timepoints.
-```{r monocle-vs-truth}
+```{r eval=FALSE,echo=TRUE}
 deng_SCE$pseudotime_monocle <- pseudotime_monocle$pseudotime
 ggplot(as.data.frame(colData(deng_SCE)), 
        aes(x = pseudotime_monocle, 
@@ -966,6 +1021,9 @@ ggplot(as.data.frame(colData(deng_SCE)),
     xlab("monocle pseudotime") + ylab("Timepoint") +
     ggtitle("Cells ordered by monocle pseudotime")
 
+```
+```{r monocle-vs-truth, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/monocle-vs-truth-1.png")
 ```
 
 Monocle - at least with its default settings - performs poorly on these data. The "late2cell" group is completely separated from the "zy", "early2cell" and "mid2cell" cells (though these are correctly ordered), and there is no separation at all of "4cell", "8cell", "16cell" or any blast cell groups.
@@ -979,7 +1037,7 @@ Monocle - at least with its default settings - performs poorly on these data. Th
 
 We will take the ranko prder of cells in the first diffusion map component as "diffusion map pseudotime" here.
 
-```{r destiny-deng}
+```{r eval=FALSE,echo=TRUE}
 deng <- logcounts(deng_SCE)
 colnames(deng) <- cellLabels
 dm <- DiffusionMap(t(deng))
@@ -992,7 +1050,11 @@ ggplot(tmp, aes(x = DC1, y = DC2, colour = Timepoint)) +
     xlab("Diffusion component 1") + 
     ylab("Diffusion component 2") +
     theme_classic()
-
+```
+```{r destiny-deng-1, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/destiny-deng-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 deng_SCE$pseudotime_diffusionmap <- rank(eigenvectors(dm)[,1])
 ggplot(as.data.frame(colData(deng_SCE)), 
        aes(x = pseudotime_diffusionmap, 
@@ -1003,6 +1065,9 @@ ggplot(as.data.frame(colData(deng_SCE)),
     ylab("Timepoint") +
     ggtitle("Cells ordered by diffusion map pseudotime")
 
+```
+```{r destiny-deng-2, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/destiny-deng-2.png")
 ```
 
 Like the other methods, using the first diffusion map component from destiny as pseudotime does a good job at ordering the early time-points (if we take high values as "earlier" in developement), but it is unable to distinguish the later ones.
@@ -1031,7 +1096,7 @@ determine which value of "k" (number of nearest neighbours) yields an embedding 
 most resembles a trajectory. Then we estimate the [locally linear
 embedding](https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction) of the cells.
 
-```{r slicer-analyis, message=FALSE, warning=FALSE}
+```{r eval=FALSE,echo=TRUE}
 library("lle")
 slicer_genes <- select_genes(t(deng))
 k <- select_k(t(deng[slicer_genes,]), kmin = 30, kmax=60)
@@ -1041,6 +1106,9 @@ plotReducedDim(deng_SCE, use_dimred = "LLE", colour_by = "cell_type2") +
     xlab("LLE component 1") + ylab("LLE component 2") +
     ggtitle("Locally linear embedding of cells from SLICER")
 ```
+```{r slicer-analyis, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/slicer-analyis-1.png")
+```
 
 With the locally linear embedding computed we can construct a
 k-nearest neighbour graph that is fully connected. This plot displays
@@ -1049,22 +1117,28 @@ blue. Here we show the graph computed using 10 nearest
 neighbours. Here, SLICER appears to detect one major trajectory with
 one branch.
 
-```{r slicer-build-graph}
+```{r eval=FALSE,echo=TRUE}
 slicer_traj_graph <- conn_knn_graph(slicer_traj_lle, 10)
 plot(slicer_traj_graph, main = "Fully connected kNN graph from SLICER")
+```
+```{r slicer-build-graph, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/slicer-build-graph-1.png")
 ```
 
 From this graph we can identify "extreme" cells that are candidates
 for start/end cells in the trajectory.
 
-```{r slicer}
+```{r eval=FALSE,echo=TRUE}
 ends <- find_extreme_cells(slicer_traj_graph, slicer_traj_lle)
 start <- ends[1]
+```
+```{r slicer, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/slicer-1.png")
 ```
 
 Having defined a start cell we can order the cells in the estimated pseudotime.
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 pseudotime_order_slicer <- cell_order(slicer_traj_graph, start)
 branches <- assign_branches(slicer_traj_graph, start)
 
@@ -1083,7 +1157,7 @@ We can again compare the inferred pseudotime to the known sampling
 timepoints. SLICER does not provide a pseudotime value per se, just an
 ordering of cells.
 
-```{r slicer-vs-truth}
+```{r eval=FALSE,echo=TRUE}
 ggplot(as.data.frame(colData(deng_SCE)), 
        aes(x = pseudotime_slicer, 
            y = cell_type2, colour = cell_type2)) +
@@ -1093,7 +1167,9 @@ ggplot(as.data.frame(colData(deng_SCE)),
     ylab("Timepoint") +
     theme_classic()
 ```
-
+```{r slicer-vs-truth, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/slicer-vs-truth-1.png")
+```
 Like the previous method, SLICER here provides a good ordering for the
 early time points. It places "16cell" cells before "8cell" cells, but provides better ordering for blast cells than many of the earlier methods.
 
@@ -1124,7 +1200,7 @@ With Ouija we can model genes as either exhibiting monotonic up or down regulati
 
 Here we can "cheat" a little and check that our selected marker genes do actually identify different timepoints of the differentiation process.
 
-```{r ouija-response-type, fig.height=11}
+```{r eval=FALSE,echo=TRUE}
 ouija_markers_down <- c("Dazl", "Rnf17", "Sycp3", "Fgf8", 
                         "Egfr", "Bmp5", "Bmp15", "Pou5f1")
 ouija_markers_up <- c("Creb3", "Gpx4", "Krt8", "Elf5", "Cdx2", 
@@ -1135,7 +1211,9 @@ ouija_markers <- c(ouija_markers_down, ouija_markers_up,
 plotExpression(deng_SCE, ouija_markers, x = "cell_type2", colour_by = "cell_type2") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1))
 ```
-
+```{r ouija-response-type, fig.height=11, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-response-type-1.png")
+```
 In order to fit the pseudotimes wesimply call `ouija`, passing in the expected response types. Note that if no response types are provided then they are all assumed to be switch-like by default, which we will do here. The input to Ouija can be a cell-by-gene matrix of non-negative expression values, or an ExpressionSet object, or, happily, by selecting the `logcounts` values from a SingleCellExperiment object.
 
 We can apply prior information about whether genes are up- or down-regulated across the differentiation process, and also provide prior information about when the switch in expression or a peak in expression is likely to occur. 
@@ -1150,7 +1228,7 @@ In general, HMC will provide more accurate inference with approximately correct 
 To help the Ouija model, we provide it with prior information about the strength of switches for up- and down-regulated genes. By setting switch strength to -10 for down-regulated genes and 10 for up-regulated genes with a prior strength standard deviation of 0.5 we are telling the model that we are confident about the expected behaviour of these genes across the differentiation process.
 
 
-```{r ouija-fit, warning=FALSE, message=FALSE, result='hide'}
+```{r ouija-fit, eval=FALSE,echo=TRUE}
 options(mc.cores = parallel::detectCores())
 response_type <- c(rep("switch", length(ouija_markers_down) + 
                            length(ouija_markers_up)), 
@@ -1173,26 +1251,41 @@ print(oui_vb)
 
 We can plot the gene expression over pseudotime along with the maximum a posteriori (MAP) estimates of the mean function (the sigmoid or Gaussian transient function) using the plot_expression function. 
 
-```{r ouija-plot-exprs}
+```{r eval=FALSE,echo=TRUE}
 plot_expression(oui_vb)
+```
+```{r ouija-plot-exprs, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-plot-exprs-1.png")
 ```
 
 We can also visualise when in the trajectory gene regulation behaviour occurs, either in the form of the switch time or the peak time (for switch-like or transient genes) using the plot_switch_times and plot_transient_times functions:
 
-```{r ouija-plot-switch-times}
+```{r eval=FALSE,echo=TRUE}
 plot_switch_times(oui_vb)
+```
+```{r ouija-plot-switch-times, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-plot-switch-times-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 plot_peak_times(oui_vb)
 ```
-
+```{r echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-plot-switch-times-2.png")
+```
 Identify metastable states using consistency matrices.
 
-```{r ouija-consistency}
+```{r eval=FALSE,echo=TRUE}
 cmo <- consistency_matrix(oui_vb)
 plot_consistency(oui_vb)
+```
+```{r ouija-consistency, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-consistency-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 cell_classifications <- cluster_consistency(cmo)
 ```
 
-```{r ouija-pseudotime}
+```{r eval=FALSE,echo=TRUE}
 map_pst <- map_pseudotime(oui_vb)
 ouija_pseudotime <- data.frame(map_pst, cell_classifications)
 
@@ -1200,7 +1293,11 @@ ggplot(ouija_pseudotime, aes(x = map_pst, y = cell_classifications)) +
   geom_point() +
   xlab("MAP pseudotime") +
   ylab("Cell classification")
-
+```
+```{r ouija-pseudotime, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-pseudotime-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 deng_SCE$pseudotime_ouija <- ouija_pseudotime$map_pst
 deng_SCE$ouija_cell_class <- ouija_pseudotime$cell_classifications
 
@@ -1214,12 +1311,15 @@ ggplot(as.data.frame(colData(deng_SCE)),
     theme_classic()
 
 ```
+```{r echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-pseudotime-2.png")
+```
 
 Ouija does quite well in the ordering of the cells here, although it can be sensitive to the choice of marker genes and prior information supplied. How do the results change if you select different marker genes or change the priors?
 
 Ouija identifies four metastable states here, which we might annotate as  "zygote/2cell", "4/8/16 cell", "blast1" and "blast2".
 
-```{r ouija-states}
+```{r eval=FALSE,echo=TRUE}
 ggplot(as.data.frame(colData(deng_SCE)), 
        aes(x = as.factor(ouija_cell_class), 
            y = pseudotime_ouija, colour = cell_type2)) +
@@ -1230,13 +1330,27 @@ ggplot(as.data.frame(colData(deng_SCE)),
     ylab("Ouija pseudotime") +
     theme_classic()
 ```
-
+```{r ouija-states, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-states-1.png")
+```
 A common analysis is to work out the regulation orderings of genes. For example, is gene A upregulated before gene B? Does gene C peak before the downregulation of gene D? Ouija answers these questions in terms of a Bayesian hypothesis test of whether the difference in regulation timing (either switch time or peak time) is significantly different to 0. This is collated using the gene_regulation function.
 
-```{r ouija-regulation}
+
+```{r ouija-regulation, eval=FALSE,echo=TRUE}
 gene_regs <- gene_regulation(oui_vb)
 head(gene_regs)
-
+```
+```{r echo=TRUE, eval=FALSE}
+## # A tibble: 6 x 7
+## # Groups:   label, gene_A [6]
+##   label         gene_A gene_B mean_difference lower_95 upper_95 significant
+##   <chr>         <chr>  <chr>            <dbl>    <dbl>    <dbl> <lgl>      
+## 1 Bmp15 - Cdx2  Bmp15  Cdx2           -0.0658 -1.17e-1  -0.0136 TRUE       
+## 2 Bmp15 - Creb3 Bmp15  Creb3           0.266   1.96e-1   0.321  TRUE       
+## 3 Bmp15 - Elf5  Bmp15  Elf5           -0.665  -7.03e-1  -0.622  TRUE       
+## 4 Bmp15 - Eomes Bmp15  Eomes           0.0765 -1.30e-2   0.150  FALSE      
+## 5 Bmp15 - Foxa1 Bmp15  Foxa1          -0.0157 -4.95e-2   0.0128 FALSE      
+## 6 Bmp15 - Gdf3  Bmp15  Gdf3            0.0592  2.06e-4   0.114  TRUE
 ```
 
 What conclusions can you draw from the gene regulation output from Ouija?
@@ -1250,7 +1364,7 @@ How do the trajectories inferred by TSCAN, Monocle, Diffusion Map, SLICER and Ou
 
 TSCAN and Diffusion Map methods get the trajectory the "wrong way round", so we'll adjust that for these comparisons.
 
-```{r compare-results, fig.width=10}
+```{r eval=FALSE,echo=TRUE}
 df_pseudotime <- as.data.frame(
     colData(deng_SCE)[, grep("pseudotime", colnames(colData(deng_SCE)))]
 )
@@ -1266,7 +1380,9 @@ corrplot.mixed(cor(df_pseudotime, use = "na.or.complete"),
                mar = c(0, 0, 3.1, 0))
 
 ```
-
+```{r compare-results, fig.width=10, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/compare-results-1.png")
+```
 We see here that Ouija, TSCAN and SLICER all give trajectories that are similar and strongly correlated with PC1. Diffusion Map is less strongly correlated with these methods, and Monocle gives very different results.
 
 
@@ -1285,57 +1401,64 @@ SLICER that do not provide plotting functions.
 
 
 __Principal components__
-```{r Rhoa-pc1, message=FALSE}
+```{r eval=FALSE,echo=TRUE}
 plotExpression(deng_SCE, "Rhoa", x = "PC1", 
                colour_by = "cell_type2", show_violin = FALSE,
                show_smooth = TRUE)
 ```
 
+```{r Rhoa-pc1, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/Rhoa-pc1-1.png")
+```
 __TSCAN__
-```{r Rhoa-tscan, message=FALSE, warning=FALSE}
+```{r eval=FALSE,echo=TRUE}
 plotExpression(deng_SCE, "Rhoa", x = "pseudotime_order_tscan", 
                colour_by = "cell_type2", show_violin = FALSE,
                show_smooth = TRUE)
 ```
-
+```{r Rhoa-tscan, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/Rhoa-tscan-1.png")
+```
 __Monocle__
-```{r Rhoa-monocle, message=FALSE}
+```{r eval=FALSE,echo=TRUE}
 plotExpression(deng_SCE, "Rhoa", x = "pseudotime_monocle", 
                colour_by = "cell_type2", show_violin = FALSE,
                show_smooth = TRUE)
 ```
-
+```{r Rhoa-monocle, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/Rhoa-monocle-1.png")
+```
 __Diffusion Map__
-```{r Rhoa-diff-map, message=FALSE}
+```{r eval=FALSE,echo=TRUE}
 plotExpression(deng_SCE, "Rhoa", x = "pseudotime_diffusionmap", 
                colour_by = "cell_type2", show_violin = FALSE,
                show_smooth = TRUE)
 ```
-
+```{r Rhoa-diff-map, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/Rhoa-diff-map-1.png")
+```
 
 __SLICER__
-```{r Rhoa-slicer, message=FALSE}
+```{r eval=FALSE,echo=TRUE}
 plotExpression(deng_SCE, "Rhoa", x = "pseudotime_slicer", 
                colour_by = "cell_type2", show_violin = FALSE,
                show_smooth = TRUE)
 ```
-
+```{r Rhoa-slicer, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/Rhoa-slicer-1.png")
+```
 __Ouija__
-```{r Rhoa-ouija, message=FALSE}
+```{r eval=FALSE,echo=TRUE}
 plotExpression(deng_SCE, "Rhoa", x = "pseudotime_ouija", 
                colour_by = "cell_type2", show_violin = FALSE,
                show_smooth = TRUE)
 ```
-
+```{r Rhoa-ouija, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/Rhoa-ouija-1.png")
+```
 How many of these methods outperform the naive approach of using the first principal component to represent pseudotime for these data?
 
 __Exercise 7__: Repeat the exercise using a subset of the genes, e.g. the set of highly variable genes that can be obtained using `Brennecke_getVariableGenes()`
-
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
 
 ## Imputation
 
@@ -1343,7 +1466,7 @@ sessionInfo()
 library(knitr)
 opts_chunk$set(fig.align="center")
 ```
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 library(scImpute)
 library(SC3)
 library(scater)
@@ -1388,7 +1511,7 @@ imputed all inflated zeros.
 
 To test `scImpute`, we use the default parameters and we apply it to the Deng dataset that we have worked with before. scImpute takes a .csv or .txt file as an input:
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r eval=FALSE,echo=TRUE}
 deng <- readRDS("data/deng/deng-reads.rds")
 write.csv(counts(deng), "deng.csv")
 scimpute(
@@ -1400,10 +1523,9 @@ scimpute(
     ncores = 2
 )
 ```
-
 Now we can compare the results with original data by considering a PCA plot
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 res <- read.table("scimpute_count.txt")
 colnames(res) <- NULL
 res <- SingleCellExperiment(
@@ -1416,19 +1538,29 @@ plotPCA(
     colour_by = "cell_type2"
 )
 ```
+```{r, fig.width = 8.5, fig.height = 6, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-4-1.png")
+```
 
 Compare this result to the original data in Chapter \@ref(clust-methods). What are the most significant differences?
 
 We can examine the expression of specific genes to directly see the effect of
  imputation on the expression distribution.
-```{r}
+```{r eval=FALSE,echo=TRUE}
 plotExpression(res, c("Sox2", "Eomes", "Zscan4d", "Fgf4"))
+```
+```{r echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-5-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 plotExpression(deng, c("Sox2", "Eomes", "Zscan4d", "Fgf4"))
 ```
-
+```{r echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-5-2.png")
+```
 
 To evaluate the impact of the imputation, we use `SC3` to cluster the imputed matrix
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r eval=FALSE,echo=TRUE}
 res <- sc3_estimate_k(res)
 metadata(res)$sc3$k_estimation
 res <- sc3(res, ks = 10, n_cores = 1, gene_filter = FALSE)
@@ -1438,6 +1570,9 @@ plotPCA(
     colour_by = "sc3_10_clusters"
 )
 ```
+```{r echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-6-1.png")
+```
 
 __Exercise:__ Based on the PCA and the clustering results, do you think that imputation using `scImpute` is a good idea for the Deng dataset?
 
@@ -1445,7 +1580,7 @@ __Exercise:__ Based on the PCA and the clustering results, do you think that imp
 
 We can do the same for DrImpute. DrImpute runs on a log-normalized expression matrix directly in R, we generate this matrix using scater, then run DrImpute. Unlike scImpute, DrImpute considers the consensus imputation across a range of ks using two differ correlation distances:
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 deng <- normalize(deng)
 res <- DrImpute(deng@assays[["logcounts"]], ks=8:12)
 colnames(res) <- colnames(deng)
@@ -1459,7 +1594,15 @@ plotPCA(
     res, 
     colour_by = "cell_type2"
 )
+```
+```{r echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-7-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 plotExpression(res, c("Sox2", "Eomes", "Zscan4d", "Fgf4"))
+```
+```{r echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-7-2.png")
 ```
 __Exercise:__ Check the sc3 clustering of the DrImpute matrix, do you think that imputation using `DrImpute` is a good idea for the Deng dataset?
 
@@ -1517,18 +1660,7 @@ __Exercise:__ MAGIC contains two parameters which affect the degree of imputatio
 __Exercise:__ What is the difference between `scImpute` and `MAGIC` based on the PCA and clustering analysis? Which one do you think is best to use?
 
 
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
-
 ## Differential Expression (DE) analysis {#dechapter}
-
-```{r, echo=FALSE}
-library(knitr)
-opts_chunk$set(fig.align = "center")
-```
 
 ### Bulk RNA-seq
 
@@ -1568,7 +1700,7 @@ Alternatively, we can use a non-parametric test which does not assume that expre
 The most common model of RNASeq data is the negative binomial model:
 
 
-```{r nb-plot, fig.cap="Negative Binomial distribution of read counts for a single gene across 1000 cells"}
+```{r eval=FALSE,echo=TRUE}
 set.seed(1)
 hist(
     rnbinom(
@@ -1580,6 +1712,9 @@ hist(
     main = "Negative Binomial"
 )
 ```
+```{r nb-plot, fig.cap="Negative Binomial distribution of read counts for a single gene across 1000 cells", echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-intro_files/figure-html/nb-plot-1.png")
+```
 Mean:
 $\mu = mu$
 
@@ -1590,7 +1725,8 @@ It is parameterized by the mean expression (mu) and the dispersion (size), which
 
 However, a raw negative binomial model does not fit full-length transcript data as well due to the high dropout rates relative to the non-zero read counts. For this type of data a variety of zero-inflated negative binomial models have been proposed (e.g. [MAST](https://bioconductor.org/packages/release/bioc/html/MAST.html), [SCDE](https://bioconductor.org/packages/release/bioc/html/scde.html)).
 
-```{r zero-inflation-plot, fig.cap="Zero-inflated Negative Binomial distribution"}
+
+```{r eval=FALSE,echo=TRUE}
 d <- 0.5;
 counts <- rnbinom(
     1000, 
@@ -1605,6 +1741,9 @@ hist(
     main = "Zero-inflated NB"
 )
 ```
+```{r zero-inflation-plot, fig.cap="Zero-inflated Negative Binomial distribution", echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-intro_files/figure-html/zero-inflation-plot-1.png")
+```
 Mean:
 $\mu = mu \cdot (1 - d)$
 
@@ -1615,7 +1754,7 @@ These models introduce a new parameter $d$, for the dropout rate, to the negativ
 
 Finally, several methods use a Poisson-Beta distribution which is based on a mechanistic model of transcriptional bursting. There is strong experimental support for this model ([Kim and Marioni, 2013](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-1-r7)) and it provides a good fit to scRNA-seq data but it is less easy to use than the negative-binomial models and much less existing methods upon which to build than the negative binomial model.
 
-```{r pois-beta-plot, fit.cap="Poisson-Beta distribution"}
+```{r eval=FALSE,echo=TRUE}
 a <- 0.1
 b <- 0.1
 g <- 100
@@ -1627,6 +1766,10 @@ hist(
     xlab = "Read Counts", 
     main = "Poisson-Beta"
 )
+```
+
+```{r pois-beta-plot, fit.cap="Poisson-Beta distribution", echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-intro_files/figure-html/pois-beta-plot-1.png")
 ```
 Mean:
 $\mu = g \cdot a / (a + b)$
@@ -1643,11 +1786,7 @@ __Exercise__: Vary the parameters of each distribution to explore how they affec
 
 ## DE in a real dataset
 
-```{r, echo=FALSE}
-library(knitr)
-opts_chunk$set(fig.align = "center")
-```
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 library(scRNA.seq.funcs)
 library(edgeR)
 library(monocle)
@@ -1663,7 +1802,7 @@ For this experiment bulk RNA-seq data for each cell-line was generated in additi
 differentially expressed genes identified using standard methods on the respective bulk data as the ground truth for evaluating the
 accuracy of each single-cell method. To save time we have pre-computed these for you. You can run the commands below to load these data.
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 DE <- read.table("data/tung/TPs.txt")
 notDE <- read.table("data/tung/TNs.txt")
 GroundTruth <- list(
@@ -1674,7 +1813,7 @@ GroundTruth <- list(
 
 This ground truth has been produce for the comparison of individual NA19101 to NA19239. Now load the respective single-cell data:
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 molecules <- read.table("data/tung/molecules.txt", sep = "\t")
 anno <- read.table("data/tung/annotation.txt", sep = "\t", header = TRUE)
 keep <- anno[,1] == "NA19101" | anno[,1] == "NA19239"
@@ -1706,7 +1845,7 @@ knitr::include_graphics("figures/KS2_Example.png")
 
 Now run the test:
 
-```{r, message=FALSE, warning=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 pVals <- apply(
     norm, 1, function(x) {
         ks.test(
@@ -1722,7 +1861,7 @@ This code "applies" the function to each row (specified by 1) of the expression 
 
 #### Evaluating Accuracy
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 sigDE <- names(pVals)[pVals < 0.05]
 length(sigDE) 
 # Number of KS-DE genes
@@ -1734,7 +1873,7 @@ sum(GroundTruth$notDE %in% sigDE)
 
 As you can see many more of our ground truth negative genes were identified as DE by the KS-test (false positives) than ground truth positive genes (true positives), however this may be due to the larger number of notDE genes thus we typically normalize these counts as the True positive rate (TPR), TP/(TP + FN), and False positive rate (FPR), FP/(FP+TP).
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 tp <- sum(GroundTruth$DE %in% sigDE)
 fp <- sum(GroundTruth$notDE %in% sigDE)
 tn <- sum(GroundTruth$notDE %in% names(pVals)[pVals >= 0.05])
@@ -1747,7 +1886,7 @@ Now we can see the TPR is much higher than the FPR indicating the KS test is ide
 
 So far we've only evaluated the performance at a single significance threshold. Often it is informative to vary the threshold and evaluate performance across a range of values. This is then plotted as a receiver-operating-characteristic curve (ROC) and a general accuracy statistic can be calculated as the area under this curve (AUC). We will use the ROCR package to facilitate this plotting.
 
-```{r ks-roc-plot, fig.cap="ROC curve for KS-test."}
+```{r eval=FALSE,echo=TRUE}
 # Only consider genes for which we know the ground truth
 pVals <- pVals[names(pVals) %in% GroundTruth$DE | 
                names(pVals) %in% GroundTruth$notDE] 
@@ -1756,12 +1895,18 @@ truth[names(pVals) %in% GroundTruth$DE] = 0;
 pred <- ROCR::prediction(pVals, truth)
 perf <- ROCR::performance(pred, "tpr", "fpr")
 ROCR::plot(perf)
+```
+```{r ks-roc-plot, fig.cap="ROC curve for KS-test.", echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/ks-roc-plot-1.png")
+```
+```{r eval=FALSE,echo=TRUE}
 aucObj <- ROCR::performance(pred, "auc")
 aucObj@y.values[[1]] # AUC
 ```
+
 Finally to facilitate the comparisons of other DE methods let's put this code into a function so we don't need to repeat it:
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 DE_Quality_AUC <- function(pVals) {
     pVals <- pVals[names(pVals) %in% GroundTruth$DE | 
                    names(pVals) %in% GroundTruth$notDE]
@@ -1778,7 +1923,7 @@ DE_Quality_AUC <- function(pVals) {
 
 The Wilcox-rank-sum test is another non-parametric test, but tests specifically if values in one group are greater/less than the values in the other group. Thus it is often considered a test for difference in median expression between two groups; whereas the KS-test is sensitive to any change in distribution of expression values.
 
-```{r wilcox-plot, fig.cap="ROC curve for Wilcox test.", message=FALSE, warning=FALSE}
+```{r eval=FALSE,echo=TRUE}
 pVals <- apply(
     norm, 1, function(x) {
         wilcox.test(
@@ -1791,12 +1936,15 @@ pVals <- apply(
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
 ```
+```{r wilcox-plot, fig.cap="ROC curve for Wilcox test.", echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/wilcox-plot-1.png")
+```
 
 ### edgeR
 
 We've already used edgeR for differential expression in Chapter \@ref(dealing-with-confounders). edgeR is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, the enables us to include other factors such as batch to the model.
 
-```{r edger-plot, fig.cap="ROC curve for edgeR.", message=FALSE}
+```{r eval=FALSE,echo=TRUE}
 dge <- DGEList(
     counts = counts, 
     norm.factors = rep(1, length(counts[1,])), 
@@ -1813,12 +1961,15 @@ names(pVals) <- rownames(res$table)
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
 ```
+```{r edger-plot, fig.cap="ROC curve for edgeR.", echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/edger-plot-1.png")
+```
 
 ### Monocle
 
 [Monocle](https://bioconductor.org/packages/release/bioc/html/monocle.html) can use several different models for DE. For count data it recommends the Negative Binomial model (negbinomial.size). For normalized data it recommends log-transforming it then using a normal distribution (gaussianff). Similar to edgeR this method uses a GLM framework so in theory can account for batches, however in practice the model fails for this dataset if batches are included.
 
-```{r Monocle-plot, fig.cap="ROC curve for Monocle.", message=FALSE, warning=FALSE}
+```{r eval=FALSE,echo=TRUE}
 pd <- data.frame(group = group, batch = batch)
 rownames(pd) <- colnames(counts)
 pd <- new("AnnotatedDataFrame", data = pd)
@@ -1837,10 +1988,13 @@ names(pVals) <- rownames(res)
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
 ```
+```{r Monocle-plot, fig.cap="ROC curve for Monocle.", echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/Monocle-plot-1.png")
+```
 __Exercise__: Compare the results using the negative binomial model on counts and those from using the normal/gaussian model (`gaussianff()`) on log-transformed normalized counts.
 
 __Answer__:
-```{r Monocle-plot2, fig.cap="ROC curve for Monocle-gaussian.", message=FALSE, echo=FALSE, warning=FALSE}
+```{r eval=FALSE,echo=TRUE}
 pd <- data.frame(group = group, batch = batch)
 rownames(pd) <- colnames(norm)
 pd <- new("AnnotatedDataFrame", data = pd)
@@ -1859,12 +2013,15 @@ names(pVals) <- rownames(res)
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
 ```
+```{r Monocle-plot2, fig.cap="ROC curve for Monocle-gaussian.", echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/Monocle-plot2-1.png")
+```
 
 ### MAST
 
 [MAST](https://bioconductor.org/packages/release/bioc/html/MAST.html) is based on a zero-inflated negative binomial model. It tests for differential expression using a hurdle model to combine tests of discrete (0 vs not zero) and continuous (non-zero values) aspects of gene expression. Again this uses a linear modelling framework to enable complex models to be considered.
 
-```{r MAST-plot, fig.cap="ROC curve for MAST.", message=FALSE}
+```{r eval=FALSE,echo=TRUE}
 log_counts <- log(counts + 1) / log(2)
 fData <- data.frame(names = rownames(log_counts))
 rownames(fData) <- rownames(log_counts);
@@ -1887,6 +2044,9 @@ names(pVals) <- unlist(summaryDt[summaryDt$component == "H",1])
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
 ```
+```{r MAST-plot, fig.cap="ROC curve for MAST.", echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/MAST-plot-1.png")
+```
 
 ### Slow Methods (>1h to run) 
 
@@ -1896,7 +2056,7 @@ These methods are too slow to run today but we encourage you to try them out on 
 
 [BPSC](https://academic.oup.com/bioinformatics/article/32/14/2128/2288270/Beta-Poisson-model-for-single-cell-RNA-seq-data) uses the Poisson-Beta model of single-cell gene expression, which we discussed in the previous chapter, and combines it with generalized linear models which we've already encountered when using edgeR. BPSC performs comparisons of one or more groups to a reference group ("control") and can include other factors such as batches in the model.
 
-```{r, message=FALSE, eval=FALSE}
+```{r,eval=FALSE,echo=TRUE}
 library(BPSC)
 bpsc_data <- norm[,batch=="NA19101.r1" | batch=="NA19239.r1"]
 bpsc_group = group[batch=="NA19101.r1" | batch=="NA19239.r1"]
@@ -1914,7 +2074,7 @@ DE_Quality_AUC(pVals)
 ### SCDE
 [SCDE](http://hms-dbmi.github.io/scde/) is the first single-cell specific DE method. It fits a zero-inflated negative binomial model to expression data using Bayesian statistics. The usage below tests for differences in mean expression of individual genes across groups but recent versions include methods to test for differences in mean expression or dispersion of groups of genes, usually representing a pathway.
 
-```{r, eval=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 library(scde)
 cnts <- apply(
     counts,
@@ -1956,12 +2116,6 @@ pVals <- pnorm(abs(resSCDE$cZ), lower.tail = FALSE) * 2
 DE_Quality_AUC(pVals)
 ```
 
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
-
 ## Comparing/Combining scRNASeq datasets
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -1970,7 +2124,7 @@ library(googleVis)
 opts_chunk$set(fig.align="center", dev = 'png')
 op <- options(gvis.plot.tag='chart')
 ```
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 library(scater)
 library(SingleCellExperiment)
 ```
@@ -2016,25 +2170,43 @@ segerstolpe <- readRDS("data/pancreas/segerstolpe.rds")
 This data has already been formatted for scmap. Cell type labels must be stored in the `cell_type1` column of the `colData` slots, and gene ids that are consistent across both datasets must be stored in the `feature_symbol` column of the `rowData` slots.
 
 First, lets check our gene-ids match across both datasets:
-```{r}
+```{r eval=FALSE,echo=TRUE}
 sum(rowData(muraro)$feature_symbol %in% rowData(segerstolpe)$feature_symbol)/nrow(muraro)
+## [1] 0.9599519
 sum(rowData(segerstolpe)$feature_symbol %in% rowData(muraro)$feature_symbol)/nrow(segerstolpe)
+## [1] 0.719334
 ```
 Here we can see that 96% of the genes present in muraro match genes in segerstople and 72% of genes in segerstolpe are match
 genes in muraro. This is as expected because the segerstolpe dataset was more deeply sequenced than the muraro dataset.
 However, it highlights some of the difficulties in comparing scRNASeq datasets.
 
 We can confirm this by checking the overall size of these two datasets.
-```{r}
+```{r eval=FALSE,echo=TRUE}
 dim(muraro)
+## [1] 19127  2126
 dim(segerstolpe)
+## [1] 25525  3514
 ```
 
 In addition, we can check the cell-type annotations for each of these dataset using the command below:
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 summary(factor(colData(muraro)$cell_type1))
+##      acinar       alpha        beta       delta      ductal endothelial 
+##         219         812         448         193         245          21 
+##     epsilon       gamma mesenchymal     unclear 
+##           3         101          80           4
 summary(factor(colData(segerstolpe)$cell_type1))
+##                 acinar                  alpha                   beta 
+##                    185                    886                    270 
+##          co-expression                  delta                 ductal 
+##                     39                    114                    386 
+##            endothelial                epsilon                  gamma 
+##                     16                      7                    197 
+##                   mast           MHC class II         not applicable 
+##                      7                      5                   1305 
+##                    PSC           unclassified unclassified endocrine 
+##                     54                      2                     41
 ```
 Here we can see that even though both datasets considered the same biological tissue the two datasets, they have been
 annotated with slightly different sets of cell-types. If you are familiar withpancreas biology you might recognize
@@ -2057,7 +2229,7 @@ muraro <- muraro[,colData(muraro)$cell_type1 != "unclear"]
 ```
 ### Projecting cells onto annotated cell-types (scmap)
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r}
 library(scmap)
 set.seed(1234567)
 ```
@@ -2074,11 +2246,17 @@ reference dataset.
 ```{r}
 muraro <- selectFeatures(muraro, suppress_plot = FALSE)
 ```
+```{r, eval=FALSE, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projection_files/figure-html/unnamed-chunk-12-1.png")
+```
 
 Genes highlighted with the red colour will be used in the futher analysis (projection).
 
 ```{r}
 segerstolpe <- selectFeatures(segerstolpe, suppress_plot = FALSE)
+```
+```{r, eval=FALSE,echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projection_files/figure-html/unnamed-chunk-13-1.png")
 ```
 From the y-axis of these plots we can see that scmap uses a dropmerged_seurat-based feature selection method.
 
@@ -2089,8 +2267,11 @@ segerstolpe <- indexCluster(segerstolpe)
 ```
 
 We can also visualize the index:
-```{r}
+```{r eval=FALSE,echo=TRUE}
 heatmap(as.matrix(metadata(muraro)$scmap_cluster_index))
+```
+```{r, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projection_files/figure-html/unnamed-chunk-15-1.png")
 ```
 
 You may want to adjust your features using the `setFeatures` function if features are too heavily concentrated in only a few cell-types. In this case the dropmerged_seurat-based features look good so we will just them.
@@ -2099,7 +2280,7 @@ __Exercise__
 Using the rowData of each dataset how many genes were selected as features in both datasets? What does this tell you abmerged_seurat these datasets?
 
 __Answer__
-```{r, include=FALSE, eval=TRUE}
+```{r, include=FALSE, eval=FALSE,echo=TRUE}
 ans = sum(rowData(muraro)[rowData(muraro)$scmap_features, "feature_symbol"] %in% rowData(segerstolpe)[rowData(segerstolpe)$scmap_features, "feature_symbol"])
 print(ans)
 ```
@@ -2109,7 +2290,7 @@ print(ans)
 scmap computes the distance from each cell to each cell-type in the reference index, then applies an empirically derived threshold to determine which cells are assigned to the closest reference cell-type and which are unassigned. To account for differences in sequencing depth distance is calculated using the spearman correlation and cosine distance and only cells with a consistent assignment with both distances are returned as assigned.
 
 We will project the `segerstolpe` dataset to `muraro` dataset:
-```{r, warning=FALSE}
+```{r,warning=FALSE}
 seger_to_muraro <- scmapCluster(
   projection = segerstolpe,
   index_list = list(
@@ -2131,13 +2312,65 @@ muraro_to_seger <- scmapCluster(
 Note that in each case we are projecting to a single dataset but that this could be extended to any number of datasets for which we have computed indices.
 
 Now lets compare the original cell-type labels with the projected labels:
-```{r}
+```{r eval=FALSE,echo=TRUE}
 table(colData(muraro)$cell_type1, muraro_to_seger$scmap_cluster_labs)
+##              
+##               acinar alpha beta co-expression delta ductal endothelial
+##   acinar         211     0    0             0     0      0           0
+##   alpha            1   763    0            18     0      2           0
+##   beta             2     1  397             7     2      2           0
+##   delta            0     0    2             1   173      0           0
+##   ductal           7     0    0             0     0    208           0
+##   endothelial      0     0    0             0     0      0          15
+##   epsilon          0     0    0             0     0      0           0
+##   gamma            2     0    0             0     0      0           0
+##   mesenchymal      0     0    0             0     0      1           0
+##              
+##               epsilon gamma MHC class II PSC unassigned
+##   acinar            0     0            0   0          8
+##   alpha             0     2            0   0         26
+##   beta              0     5            1   2         29
+##   delta             0     0            0   0         17
+##   ductal            0     0            5   3         22
+##   endothelial       0     0            0   1          5
+##   epsilon           3     0            0   0          0
+##   gamma             0    95            0   0          4
+##   mesenchymal       0     0            0  77          2
 ```
 Here we can see that cell-types do map to their equivalents in segerstolpe, and importantly we see that all but one of the "mesenchymal" cells were assigned to the "PSC" class.
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 table(colData(segerstolpe)$cell_type1, seger_to_muraro$scmap_cluster_labs)
+##                         
+##                          acinar alpha beta delta ductal endothelial
+##   acinar                    181     0    0     0      4           0
+##   alpha                       0   869    1     0      0           0
+##   beta                        0     0  260     0      0           0
+##   co-expression               0     7   31     0      0           0
+##   delta                       0     0    1   111      0           0
+##   ductal                      0     0    0     0    383           0
+##   endothelial                 0     0    0     0      0          14
+##   epsilon                     0     0    0     0      0           0
+##   gamma                       0     2    0     0      0           0
+##   mast                        0     0    0     0      0           0
+##   MHC class II                0     0    0     0      0           0
+##   PSC                         0     0    1     0      0           0
+##   unclassified endocrine      0     0    0     0      0           0
+##                         
+##                          epsilon gamma mesenchymal unassigned
+##   acinar                       0     0           0          0
+##   alpha                        0     0           0         16
+##   beta                         0     0           0         10
+##   co-expression                0     0           0          1
+##   delta                        0     0           0          2
+##   ductal                       0     0           0          3
+##   endothelial                  0     0           0          2
+##   epsilon                      6     0           0          1
+##   gamma                        0   192           0          3
+##   mast                         0     0           0          7
+##   MHC class II                 0     0           0          5
+##   PSC                          0     0          53          0
+##   unclassified endocrine       0     0           0         41
 ```
 Again we see cell-types match each other and that all but one of the "PSCs" match the "mesenchymal" cells providing strong evidence that these two annotations should be considered synonymous.
 
@@ -2150,7 +2383,7 @@ __Exercise__
 How many of the previously unclassified cells would be be able to assign to cell-types using scmap?
 
 __Answer__
-```{r, include=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 t2 <- table(colData(segerstolpe)$cell_type1, seger_to_muraro$scmap_cluster_labs)
 seger_assigned <- sum(t2[c("unclassified endocrine"), 1:9])
 ```
@@ -2162,7 +2395,7 @@ cells). However, this process is stochastic so we must fix the random seed to en
 
 We have already performed feature selection for this dataset so we can go straight to building the index.
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 set.seed(193047)
 segerstolpe <- indexCell(segerstolpe)
 muraro <- indexCell(muraro)
@@ -2174,12 +2407,18 @@ number of clusters and the number of features used in each of these subclusterin
 dataset with the same or most similar pattern of cluster assignments.
 
 We can examine the cluster assignment patterns for the reference datasets using:
-```{r}
+```{r eval=FALSE,echo=TRUE}
 metadata(muraro)$scmap_cell_index$subclusters[1:5,1:5]
+##      D28.1_1 D28.1_13 D28.1_15 D28.1_17 D28.1_2
+## [1,]       4        6        4       24      34
+## [2,]      16       27       14       11       3
+## [3,]      18       12       17       26      24
+## [4,]      44       33       41       44      12
+## [5,]      39       44       23       34      32
 ```
 
 To project and find the `w` nearest neighbours we use a similar command as before:
-```{r}
+```{r eval=FALSE,echo=TRUE}
 muraro_to_seger <- scmapCell(
   projection = muraro,
   index_list = list(
@@ -2190,12 +2429,20 @@ muraro_to_seger <- scmapCell(
 ```
 
 We can again look at the results:
-```{r}
+```{r eval=FALSE,echo=TRUE}
 muraro_to_seger$seger[[1]][,1:5]
+##      D28.1_1 D28.1_13 D28.1_15 D28.1_17 D28.1_2
+## [1,]    1448     1381     1125     1834    1553
+## [2,]    1731      855     1081     1731    1437
+## [3,]    1229     2113     2104     1790    1890
+## [4,]    2015     1833     1153     1882    1593
+## [5,]    1159     1854     1731     1202    1078
 ```
 This shows the column number of the 5 nearest neighbours in segerstolpe to each of the cells in muraro. We could then calculate a pseudotime estimate, branch assignment, or other cell-level data by selecting the appropriate data from the colData of
 the segerstolpe data set. As a demonstration we will find the cell-type of the nearest neighbour of each cell.
-```{r}
+```{r eval=FALSE,echo=TRUE}
+cell_type_NN <- colData(segerstolpe)$cell_type1[muraro_to_seger$seger[[1]][1,]]
+head(cell_type_NN)
 cell_type_NN <- colData(segerstolpe)$cell_type1[muraro_to_seger$seger[[1]][1,]]
 head(cell_type_NN)
 ```
@@ -2208,14 +2455,14 @@ versions. First is a fully supervised method which assumes cell-types are known 
 Metaneighbour compares cell-types across datasets by building a cell-cell spearman correlation network. The method then tries to predict the label of each cell through weighted "votes" of its nearest-neighbours. Then scores the overall similarity between two clusters as the AUROC for assigning cells of typeA to typeB based on these weighted votes. AUROC of 1 would indicate all the cells of typeA were assigned to typeB before any other cells were, and an AUROC of 0.5 is what you would get if cells were being randomly assigned.
 
 Metanighbour is just a couple of R functions not a complete package so we have to load them using `source`
-```{r}
+```{r eval=FALSE,echo=TRUE}
 source("utils/2017-08-28-runMN-US.R")
 ```
 #### Prepare Data
 
 Metaneighbour requires all datasets to be combined into a single expression matrix prior to running:
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 is.common <- rowData(muraro)$feature_symbol %in% rowData(segerstolpe)$feature_symbol
 muraro <- muraro[is.common,]
 segerstolpe <- segerstolpe[match(rowData(muraro)$feature_symbol, rowData(segerstolpe)$feature_symbol),]
@@ -2235,13 +2482,13 @@ rownames(pheno) <- colnames(combined_logcounts)
 
 Metaneighbor includes a feature selection method to identify highly variable genes.
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 var.genes = get_variable_genes(combined_logcounts, pheno)
 ```
 
 Since Metaneighbor is much slower than `scmap`, we will down sample these datasets.
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 subset <- sample(1:nrow(pheno), 2000)
 combined_logcounts <- combined_logcounts[,subset]
 pheno <- pheno[subset,]
@@ -2253,9 +2500,12 @@ Now we are ready to run Metaneighbor. First we will run the unsupervised
 version that will let us see which cell-types are most similar across the
 two datasets.
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 unsup <- run_MetaNeighbor_US(var.genes, combined_logcounts, unique(pheno$Celltype), pheno)
 heatmap(unsup)
+```
+```{r, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projection_files/figure-html/unnamed-chunk-32-1.png")
 ```
 
 ### mnnCorrect
@@ -2270,26 +2520,37 @@ mnnCorrect also assumes you've already subset your expression matricies so that 
 ```{r, echo=FALSE, merged_seurat.width = '80%', fig.cap="mnnCorrect batch/dataset effect correction. From Haghverdi et al. 2017"}
 knitr::include_graphics("figures/mnnCorrectDiagramCropped.png")
 ```
-```{r}
+```{r eval=FALSE,echo=TRUE}
 require("scran")
 # mnnCorrect will take several minutes to run
 corrected <- mnnCorrect(logcounts(muraro), logcounts(segerstolpe), k=20, sigma=1, pc.approx=TRUE, subset.row=var.genes, svd.dim=3)
 ```
 First let's check that we found a sufficient number of mnn pairs, mnnCorrect returns a list of dataframe with the mnn pairs for each dataset.
-```{r}
+```{r eval=FALSE,echo=TRUE}
 dim(corrected$pairs[[1]]) # muraro -> others
+## [1] 0 3
 dim(corrected$pairs[[2]]) # seger -> others
+## [1] 2533    3
 ```
 The first and second columns contain the cell column IDs and the third column contains a number indicating which dataset/batch the column 2 cell belongs to. In our case,
 we are only comparing two datasets so all the mnn pairs have been assigned to the second table and the third column contains only ones
-```{r}
+```{r eval=FALSE,echo=TRUE}
 head(corrected$pairs[[2]])
+## DataFrame with 6 rows and 3 columns
+##   current.cell other.cell other.batch
+##      <integer>      <Rle>       <Rle>
+## 1         1553          5           1
+## 2         1078          5           1
+## 3         1437          5           1
+## 4         1890          5           1
+## 5         1569          5           1
+## 6          373          5           1
 total_pairs <- nrow(corrected$pairs[[2]])
 n_unique_seger <- length(unique((corrected$pairs[[2]][,1])))
 n_unique_muraro <- length(unique((corrected$pairs[[2]][,2])))
 ```
 
-mnnCorrect found `r total_pairs` sets of mutual nearest-neighbours between `n_unique_seger` segerstolpe cells and `n_unique_muraro` muraro cells. This should be a sufficient number of pairs but the low number of unique cells in each dataset suggests we might not have captured the full biological signal in each dataset.
+mnnCorrect found `total_pairs` sets of mutual nearest-neighbours between `n_unique_seger` segerstolpe cells and `n_unique_muraro` muraro cells. This should be a sufficient number of pairs but the low number of unique cells in each dataset suggests we might not have captured the full biological signal in each dataset.
 
 __Exercise__
 Which cell-types had mnns across these datasets? Should we increase/decrease k?
@@ -2305,7 +2566,7 @@ summary(factor(colData(muraro)$cell_type1[muraro_matched_cells]))
 
 Now we could create a combined dataset to jointly analyse these data. However, the corrected data is no longer counts and usually will contain negative expression values thus some analysis tools may no longer be appropriate. For simplicity let's just plot a joint TSNE.
 
-```{r}
+```{r eval=FALSE,echo=TRUE}
 require("Rtsne")
 joint_expression_matrix <- cbind(corrected$corrected[[1]], corrected$corrected[[2]])
 
@@ -2315,6 +2576,9 @@ joint_tsne <- Rtsne(t(joint_expression_matrix[rownames(joint_expression_matrix) 
 dataset_labels <- factor(rep(c("m", "s"), times=c(ncol(muraro), ncol(segerstolpe))))
 cell_type_labels <- factor(c(colData(muraro)$cell_type1, colData(segerstolpe)$cell_type1))
 plot(joint_tsne$Y[,1], joint_tsne$Y[,2], pch=c(16,1)[dataset_labels], col=rainbow(length(levels(cell_type_labels)))[cell_type_labels])
+```
+```{r, echo=FALSE}
+knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projection_files/figure-html/unnamed-chunk-38-1.png")
 ```
 
 ### Cannonical Correlation Analysis (Seurat)
@@ -2449,19 +2713,7 @@ __Advanced Exercise__
 Use the clustering methods we previously covered on the combined datasets. Do you identify any novel cell-types?
 
 
-
-### sessionInfo()
-
-```{r echo=FALSE}
-sessionInfo()
-```
-
 ## Search scRNA-Seq data
-
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-library(knitr)
-opts_chunk$set(fig.align="center")
-```
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 library(scfind)
@@ -2497,6 +2749,7 @@ heart_index <- buildCellTypeIndex(
   cell.type.label = "cell_type1",
   dataset.name = "Heart"
 )
+heart_index <- buildCellTypeIndex(tm10x_heart, cell_type_column = "cell_type1")
 ```
 
 `scfind` adopts a two-step compression strategy which allows efficient compression of large cell-by-gene matrix and allows fast retrieval of data by gene query. We estimated that one can achieve 2 orders of magnitude compression with this method.
