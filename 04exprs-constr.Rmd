@@ -94,7 +94,7 @@ library(knitr)
 opts_chunk$set(fig.align = "center", echo=FALSE)
 ```
 
-## 唯一分子标识符
+## 唯一分子标识符 {#umichapter}
 
 感谢来 [EMBL Monterotondo](https://www.embl.it/services/bioinformatics/)的Andreas Buness在本节的合作。
 
