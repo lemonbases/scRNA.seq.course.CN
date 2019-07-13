@@ -1646,7 +1646,7 @@ plotPCA(
 ```
 
 
-## 处理混淆因子
+## 处理混淆因子 {#dealing-with-confounders}
 
 ### 介绍
 
