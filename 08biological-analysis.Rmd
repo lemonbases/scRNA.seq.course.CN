@@ -19,25 +19,15 @@ scRNA-seq最有希望的应用之一是基于转录谱的*de novo*发现和注�
 
 ### 降维
 
-When working with large datasets, it can often be beneficial to apply
-some sort of dimensionality reduction method. By projecting
-the data onto a lower-dimensional sub-space, one is often able to
-significantly reduce the amount of noise. An additional benefit is
-that it is typically much easier to visualize the data in a 2 or
-3-dimensional subspace. We have already discussed PCA (chapter \@ref(visual-pca)) and t-SNE (chapter \@ref(visual-pca)).
+在处理大型数据集时，应用某种降维方法是有帮助的。将数据投影到较低维度的子空间上，能够显著减少噪声。另一个好处是，在2维或3维子空间中可视化数据要容易得多。我们已经讨论了PCA(章节 \@ref(visual-pca))和t-SNE(章节 \@ref(visual-pca))。
 
 ### 聚类方法
 
-__Unsupervised clustering__ is useful in many different applications and
-it has been widely studied in machine learning. Some of the most
-popular approaches are __hierarchical clustering__, __k-means clustering__ and __graph-based clustering__.
+**非监督聚类** 在机器学习中广泛研究并应用于不同领域。常用的流行方法是：**层次聚类**，**k-means聚类**，**基于的图聚类**。
 
 #### 层次聚类
 
-In [hierarchical clustering](https://en.wikipedia.org/wiki/Hierarchical_clustering), one can use either a bottom-up or a
-top-down approach. In the former case, each cell is initially assigned to
-its own cluster and pairs of clusters are subsequently merged to
-create a hieararchy:
+[层次聚类](https://en.wikipedia.org/wiki/Hierarchical_clustering)可以使用自下而上或自上而下的方法。 在前一种情况下，每个细胞最初单独为一类，随后将类进行合并形成hieararchy：
 
 ```{r clust-hierarch-raw, out.width = '30%', fig.cap="Raw data"}
 knitr::include_graphics("figures/hierarchical_clustering1.png")
