@@ -380,7 +380,7 @@ summary( rowSums(counts(deng))[! rownames(counts(deng)) %in% rownames(expr_matri
 
 如果数据集包含spike-in RNAs，其可以用于直接模拟技术噪音。然而，spike-ins可能不像内源转录本经历相同的技术噪音 [(Svensson et al., 2017)](https://www.nature.com/nmeth/journal/v14/n4/full/nmeth.4220.html)。而且，scRNA-seq实验只包含一小部分spike-ins，对拟合模型参数可能不足。
 
-#### 高可变基因(Highly Variable Genes, HVG)
+#### Highly Variable Genes
 
 提出用于鉴定scRNA-Seq数据集特征的第一种方法是鉴定高度可变的基因（HVG）。 HVG假设如果基因在细胞间的表达差异很大，那么这些差异中的一部分是由于细胞之间的生物学差异而不是技术噪声。然而，由于count data的性质，基因的表达均值与细胞read count的方差之间存在正相关关系。必须纠正这种关系才能正确识别HVG。
 
@@ -431,21 +431,13 @@ length(HVG_genes)
 ```
 #### High Dropout Genes
 
-An alternative to finding HVGs is to identify genes with unexpectedly high numbers of zeros.
-The frequency of zeros, known as the "dropout rate", is very closely related to expression level
-in scRNASeq data. Zeros are the dominant feature of single-cell RNASeq data, typically accounting
-for over half of the entries in the final expression matrix. These zeros predominantly result
-from the failure of mRNAs failing to be reversed transcribed [(Andrews and Hemberg, 2016)](http://www.biorxiv.org/content/early/2017/05/25/065094). Reverse transcription
-is an enzyme reaction thus can be modelled using the Michaelis-Menten equation:
+另外一种寻找HVGs是识别具有非常多0值表达的基因。0的频率称之为`dropout rate`,和scRNA-seq数据中表达水平密切相关。scRNA-seq数据中表达矩阵超过一半的基因表达值为0，因为单细胞中mRNA无法被逆转录[(Andrews and Hemberg, 2016)](http://www.biorxiv.org/content/early/2017/05/25/065094)。逆转录是酶促反应，可以使用Michaelis-Menten方程模拟:
 
 $$P_{dropout} = 1 - S/(K + S)$$
 
-where $S$ is the mRNA concentration in the cell (we will estimate this as average expression)
-and $K$ is the Michaelis-Menten constant.
+其中$S$为细胞中mRNA浓度(使用平均表达值来估计)，$K$是Michaelis-Menten常数。
 
-Because the Michaelis-Menten equation is a convex non-linear function, genes which are
-differentially expression across two or more populations of cells in our dataset will
-be shifted up/right of the Michaelis-Menten model (see Figure below).
+由于Michaelis-Menten方差是非线性凸函数，数据集中细胞间差异表达的基因位于Michaelis-Menten模型的上/右方(见下图)。
 
 ```{r, eval=FALSE,echo=TRUE}
 K <- 49
@@ -483,9 +475,9 @@ points(
 ```{r, fig.width = 8.5, fig.height = 6, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-11-1.png")
 ```
-__Note__: add `log="x"` to the `plot` call above to see how this looks on the log scale, which is used in M3Drop figures.
+__注意__: 将`log="x"`加入`plot`函数，查看log尺度下的图像。
 
-__Exercise 4__: Produce the same plot as above with different expression levels (S1 & S2) and/or mixtures (mix).
+__练习4__: 使用不同表达水平(S1 & S2)或混合进行作图。
 
 ```{r, echo=TRUE, eval=FALSE}
 plot(
@@ -518,8 +510,7 @@ points(
     cex = 3
 )
 ```
-We use M3Drop to identify significant outliers to the right of the MM
-curve. We also apply 1% FDR multiple testing correction:
+使用M3Drop识别MM曲线右侧的显著异常值。应用1％FDR多重假设校正：
 
 ```{r, eval=FALSE,echo=TRUE}
 M3Drop_genes <- M3DropFeatureSelection(
@@ -533,25 +524,11 @@ M3Drop_genes <- M3Drop_genes$Gene
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-13-1.png")
 ```
 
-An alternative method is contained in the M3Drop package that is tailored specifically for
-UMI-tagged data which generally contains many zeros resulting from low sequencing coverage
-in addition to those resulting from insufficient reverse-transcription. This model is the
-Depth-Adjusted Negative Binomial (DANB). This method describes each expression observation
-as a negative binomial model with a mean related to both the mean expression of the
-respective gene and the sequencing depth of the respective cell, and a variance related to
-the mean-expression of the gene. 
+M3Drop包中包含另一种方法，法专门针对UMI-tagged数据，该数据通常包含由低序列覆盖率以及逆转录不足，产生的许多0值。该模型是Depth-Adjusted Negative Binomial (DANB)。 该方法将每个表达观测描述为负二项模型，其均值和相应基因的平均表达和相应细胞的测序深度相关,其方差和基因的平均表达相关。
 
-This method is designed to model the raw counts in a dataset directly, and we can extract
-the appropriate matrix using the "NBumiConvertData" function similar to M3Drop. However,
-we have an extra step for fitting the model since that is the slowest step of the method
-and we are currently working on additional methods that can use this model information
-for other things (such as normalization, co-expression testing, highly variable gene
-detection).
+此方法直接对数据集中的raw counts进行建模，可以使用类似于M3Drop的"NBumiConvertData"函数提取相应的矩阵。 然而，我们有一个额外的步骤来拟合模型，因为这是该方法的最慢步骤，我们目前正在研究其他方法，可以将此模型信息用于其他方面（如标准化，共表达测试，检测HVG）。
 
-This method includes a binomial test of the significance of each feature, but since
-the Deng data is not UMI counts the model does not fit the noise sufficiently and 
-far too many genes will be called as significant. Thus we will take the top 1500
-by effect size.
+该方法包括对每个特征的重要性进行二项式检验，但由于Deng数据不是UMI counts，因此模型不能充分地拟合噪声，并且太多基因检测为显著的。 因此，我们将按x效应大小去Top1500。
 
 ```{r, eval=FALSE,echo=TRUE}
 deng_int <- NBumiConvertData(deng)
@@ -563,39 +540,26 @@ DANB_genes <- DropFS[1:1500,]$Gene
 ```{r, fig.width=8, fig.height=5, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-14-1.png")
 ```
-__Exercise 5__
-How many genes were signifcant using NBumiFeatureSelectionCombinedDrop? 
+__练习5__
+使用NBumiFeatureSelectionCombinedDrop有多少基因是显著的？
 
-```{r, eval=FALSE, fig.width = 8.5, fig.height = 6}
+```{r, eval=FALSE, echo=TRUE}
 nrow(DropFS)
+## 10694
 ```
 
 ### Correlated Expression
 
-A completely different approach to feature selection is to use gene-gene correlations. This method
-is based on the idea that multiple genes will be differentially expressed between different cell-types
-or cell-states. Genes which are expressed in the same cell-population will be positively correlated
-with each other where as genes expressed in different cell-populations will be negatively correated with
-each other. Thus important genes can be identified by the magnitude of their correlation
-with other genes.
+和之前方法不同时使用基因-基因相关性。该方法基于多个基因将在不同细胞类型或细胞状态之间差异表达。在相同细胞群中表达的基因彼此正相关，其中在不同细胞群中表达的基因将彼此负相关。因此，通过基因间相关程度来鉴定重要基因。
 
-The limitation of this method is that it assumes technical noise is random and independent for each cell,
-thus shouldn't produce gene-gene correlations, but this assumption is violated by batch effects which are
-generally systematic between different experimental batches and will produce gene-gene correlations. As a
-result it is more appropriate to take the top few thousand genes as ranked by gene-gene correlation than
-consider the significance of the correlations.
+这种方法的局限性在于它假设技术噪声对于每个细胞是随机且独立的，因此不产生基因-基因相关性，但是这种假设被批次效应所违背，批次效应通常在不同的实验批次之间并且产生基因-基因相关性。因此，通过基因-基因相关性排序选择前几千个基因比考虑相关性的显著性更合适。
 
-
-```{r, eval=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 cor_feat <- M3Drop::corFS(expr_matrix)
 Cor_genes <- names(cor_feat)[1:1500]
 ```
 
-Lastly, another common method for feature selection in scRNASeq data is to use PCA loadings. Genes with
-high PCA loadings are likely to be highly variable and correlated with many other variable genes, thus
-may be relevant to the underlying biology. However, as with gene-gene correlations PCA loadings tend to
-be susceptible to detecting systematic variation due to batch effects; thus it is recommended to plot the PCA
-results to determine those components corresponding to the biological variation rather than batch effects.
+最后，scRNA-Seq数据分析中另一种常用的特征选择方法是使用PCA loadings。具有高PCA loadings的基因可能是高度可变的并且与许多其他可变基因相关，因此可能与潜在的生物学性质相关。然而，与基因-基因相关性一样，PCA loading对批次效应敏感; 因此，建议绘制PCA结果以确定对应生物变异而不是批次效应的组成分。
 
 ```{r, eval=FALSE,echo=TRUE}
 # PCA is typically performed on log-transformed expression data
@@ -619,10 +583,9 @@ names(score) <- rownames(expr_matrix)
 score <- score[order(-score)]
 PCA_genes <- names(score[1:1500])
 ```
-__Exercise 6__
-Consider the top 5 principal components. Which appear to be most biologically relevant? How does the top 1,500
-features change if you consider the loadings for those components?
-```{r, include=FALSE,echo=TRUE, eval=FALSE}
+__练习6__
+查看前5个组成分，哪个与生物学现象最相关？如果考虑这些组成分的loadings，Top1500个特征如何变化？
+```{r, echo=TRUE, eval=FALSE}
 plot(
     pca$rotation[,2], 
     pca$rotation[,3], 
@@ -641,10 +604,9 @@ names(score) <- rownames(expr_matrix)
 score <- score[order(-score)]
 PCA_genes2 = names(score[1:1500])
 ```
-### Comparing Methods
+### 比较不同的方法
 
-We can check whether the identified features really do represent genes differentially expressed between
-cell-types in this dataset.
+检查所识别的特征是否代表了该数据集中细胞类型之间差异表达的基因。
 
 ```{r, eval=FALSE,echo=TRUE}
 M3DropExpressionHeatmap(
@@ -657,16 +619,16 @@ M3DropExpressionHeatmap(
 ```{r, fig.width = 7, fig.height = 10, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/dropouts_files/figure-html/unnamed-chunk-19-1.png")
 ```
-We can also consider how consistent each feature selection method is with the others using the Jaccard Index:
+使用Jaccard指数比较特征选择方法的一致性：
 ```{r eval=FALSE,echo=TRUE}
 J <- sum(M3Drop_genes %in% HVG_genes)/length(unique(c(M3Drop_genes, HVG_genes)))
 ```
 
-__Exercise 7__
+__练习7__
 
-Plot the expression of the features for each of the other methods. Which appear to be differentially expressed? How consistent are the different methods for this dataset?
+绘制每种方法的基因的表达值，其中哪个是差异表达？该数据集中不同方法的一致性体现在哪里？
 
-```{r, eval=FALSE, include=FALSE, fig.width = 7, fig.height = 10}
+```{r, eval=FALSE, echo=TRUE, fig.width = 7, fig.height = 10}
 M3DropExpressionHeatmap(
     HVG_genes,
     expr_matrix,
@@ -674,7 +636,7 @@ M3DropExpressionHeatmap(
 )
 ```
 
-```{r, eval=FALSE, include=FALSE, fig.width = 7, fig.height = 10}
+```{r, eval=FALSE, echo=TRUE, fig.width = 7, fig.height = 10}
 M3DropExpressionHeatmap(
     Cor_genes,
     expr_matrix,
@@ -682,7 +644,7 @@ M3DropExpressionHeatmap(
 )
 ```
 
-```{r, eval=FALSE, include=FALSE, fig.width = 7, fig.height = 10}
+```{r, eval=FALSE, echo=TRUE, fig.width = 7, fig.height = 10}
 M3DropExpressionHeatmap(
     PCA_genes,
     expr_matrix,
@@ -690,7 +652,7 @@ M3DropExpressionHeatmap(
 )
 ```
 
-```{r, eval=FALSE, include=FALSE, fig.width = 7, fig.height = 10}
+```{r, eval=FALSE, echo=TRUE, fig.width = 7, fig.height = 10}
 M3DropExpressionHeatmap(
     PCA_genes2,
     expr_matrix,
@@ -698,7 +660,7 @@ M3DropExpressionHeatmap(
 )
 ```
 
-```{r, eval=FALSE, include=FALSE}
+```{r, eval=FALSE, echo=TRUE}
 list_of_features <- list(
     M3Drop_genes, 
     HVG_genes, 
@@ -721,7 +683,7 @@ colnames(Out) <- rownames(Out) <- c("M3Drop", "HVG", "Cor", "PCA", "PCA2")
 ```
 
 
-## Pseudotime analysis
+## 伪时间分析
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 library(SingleCellExperiment)
@@ -738,54 +700,29 @@ library(ggbeeswarm)
 library(corrplot)
 set.seed(1)
 ```
+在许多情况下，科学家正在研究细胞不断变化的过程。 这包括，例如，在发育阶段的分化过程：在刺激之后，细胞将从一种细胞类型变为另一种细胞类型。 理想情况下，我们希望监测单个细胞随时间的表达水平。然而，用scRNA-seq并不能做到，因为当提取RNA时细胞被裂解（破坏）。
 
-In many situations, one is studying a process where cells change
-continuously. This includes, for example, many differentiation processes
-taking place during development: following a stimulus, cells
-will change from one cell-type to another. Ideally, we would like to
-monitor the expression levels of an individual cell over
-time. Unfortunately, such monitoring is not possible with scRNA-seq
-since the cell is lysed (destroyed) when the RNA is extracted.
+相反，在多个时间点采样并获得基因表达谱的snapshot。 由于一些细胞将在分化过程中比其他细胞更快，因此每个snapshot包括处于不同发育状态的细胞。 使用统计方法沿着一个或多个轨迹对细胞进行排序，这些轨迹代表潜在的发育轨迹，这种排序被称为"伪时间"。
 
-Instead, we must sample at multiple time-points and obtain snapshots
-of the gene expression profiles. Since some of the cells will proceed
-faster along the differentiation than others, each snapshot may
-contain cells at varying points along the developmental
-progression. We use statistical methods to order the cells along one
-or more trajectories which represent the underlying developmental
-trajectories, this ordering is referred to as "pseudotime".
+在本章中，我们考虑五种不同的工具：Monocle，TSCAN，destiny，SLICER和ouija，用于根据伪时间发育过程对细胞进行排序。 为了演示这些方法，我们使用小鼠胚胎发育的数据集[@Deng2014-mx]。该数据集由早期小鼠发育的10个不同时间点的268个细胞组成。 在这种情况下，不需要伪时间对齐，因为细胞标签提供关于发育轨迹的信息。 因此，细胞标签可以建立一个基准，以便评估和比较不同的方法。
 
-In this chapter we will consider five different tools: Monocle, TSCAN,
-destiny, SLICER and ouija for ordering cells according to their pseudotime
-development. To illustrate the methods we will be using a dataset on
-mouse embryonic development [@Deng2014-mx]. The dataset consists of
-268 cells from 10 different time-points of early mouse development. In this case, there is no need for pseudotime alignment since the cell labels provide information about the development trajectory. Thus, the labels allow us to establish a ground truth so that we can evaluate and compare the different methods.
+Cannoodt等人最近的综述提供了来自单细胞转录组学的轨迹推断的各种计算方法的详细综述[@Cannoodt2016-uj]。 他们讨论了几种工具，但不幸的是，许多这些工具维护不善，或没有在R中实现。
 
-A recent review by Cannoodt et al provides a detailed summary of the
-various computational methods for trajectory inference from
-single-cell transcriptomics [@Cannoodt2016-uj]. They discuss several
-tools, but unfortunately for our purposes many of these tools do not
-have complete or well-maintained implementations, and/or are not
-implemented in R.
+Cannoodt等人包括:
 
-Cannoodt et al cover:
-
-* SCUBA - Matlab implementation
-* Wanderlust - Matlab (and requires registration to even download)
+* SCUBA - Matlab实现
+* Wanderlust - Matlab (需要注册和下载)
 * Wishbone - Python
-* SLICER - R, but package only available on Github
-* SCOUP - C++ command line tool
-* Waterfall - R, but one R script in supplement
-* Mpath - R pkg, but available as tar.gz on Github; function
-documentation but no vignette/workflow
-* Monocle - Bioconductor package
-* TSCAN - Bioconductor package
+* SLICER - R, 但是只能从GitHub安装
+* SCOUP - C++ 命令行工具
+* Waterfall - R, 附件中的R脚本
+* Mpath - R包, GitHub安装，文档没有vignette/workflow
+* Monocle - Bioconductor包
+* TSCAN - Bioconductor包
 
-Unfortunately only two tools discussed (Monocle and TSCAN) meet the
-gold standard of open-source software hosted in a reputable repository.
+然而只有两个讨论的工具（Monocle和TSCAN）满足开源软件黄金标准。
 
-The following figures from the paper summarise some of the features of
-the various tools.
+下图总结了不同工具的特征。
 
 ```{r pseudotime-methods-description, out.width = '90%', fig.cap="Descriptions of trajectory inference methods for single-cell transcriptomics data (Fig. 2 from Cannoodt et al, 2016).", echo=FALSE}
 knitr::include_graphics("figures/cannoodt_pseudotime_properties.png")
@@ -796,9 +733,9 @@ knitr::include_graphics("figures/cannoodt_pseudotime_methods.png")
 ```
 
 
-### First look at Deng data
+### Deng数据初探
 
-Let us take a first look at the Deng data, without yet applying sophisticated pseudotime methods. As the plot below shows, simple PCA does a very good job of displaying the structure in these data. It is only once we reach the blast cell types ("earlyblast", "midblast", "lateblast") that PCA struggles to separate the distinct cell types.
+首先看看Deng data，但还没有应用复杂的伪时间方法。如下图所示，简单的PCA可以很好地显示这些数据中的结构。PCA分离的效果不错，除了囊胚细胞类型("早期囊胚", "中期囊胚", "晚期囊胚")混杂在一起。
 
 ```{r eval=FALSE,echo=TRUE}
 deng_SCE <- readRDS("data/deng/deng-reads.rds")
@@ -818,7 +755,7 @@ plotPCA(deng_SCE, colour_by = "cell_type2")
 ```{r data-overview, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/data-overview-1.png")
 ```
-PCA, here, provides a useful baseline for assessing different pseudotime methods. For a very naive pseudotime we can just take the co-ordinates of the first principal component.
+PCA为评估不同的伪时间方法提供了基准。对于一个非常粗糙的伪时间分析，我们可以只取第一个主成分的坐标。
 
 ```{r eval=FALSE,echo=TRUE}
 deng_SCE$PC1 <- reducedDim(deng_SCE, "PCA")[,1]
@@ -833,16 +770,15 @@ ggplot(as.data.frame(colData(deng_SCE)), aes(x = PC1, y = cell_type2,
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/pca-pseudotime-1.png")
 ```
 
-As the plot above shows, PC1 struggles to correctly order cells early and late in the developmental timecourse, but overall does a relatively good job of ordering cells by developmental time.   
+如上图所示，PC1在发育时间段的早期和晚期都难以对细胞进行正确排序，但总的来说，按照发育时间对细胞排序效果不错。
 
-Can bespoke pseudotime methods do better than naive application of PCA?
- 
+定制的伪时间分析方法比粗糙引用PCA效果好吗？
 
 ### TSCAN
 
-TSCAN combines clustering with pseudotime analysis. First it clusters the cells using `mclust`, which is based on a mixture of normal distributions. Then it builds a minimum spanning tree to connect the clusters. The branch of this tree that connects the largest number of clusters is the main branch which is used to determine pseudotime.
+TSCAN将聚类与伪时间分析相结合。首先，基于混合正态分布使用`mclust`聚类细胞。构建一个最小生成树来连接cluster。 连接最大数量cluster的分支是用于确定伪时间的主分支。
 
-First we will try to use all genes to order the cells.
+首先使用所有基因对细胞排序。
 
 ```{r eval=FALSE,echo=TRUE}
 procdeng <- TSCAN::preprocess(deng)
@@ -861,9 +797,9 @@ deng_SCE$pseudotime_order_tscan[as.numeric(dengorderTSCAN$sample_name)] <-
     dengorderTSCAN$Pseudotime
 ```
 
-Frustratingly, TSCAN only provides pseudotime values for 221 of 268 cells, silently returning missing values for non-assigned cells.
+令人沮丧的是，TSCAN仅为268细胞中221个细胞提供伪时间值，静默返回未指定细胞的缺失值。
 
-Again, we examine which timepoints have been assigned to each state:
+检查哪些时间点分配给什么状态：
 
 ```{r eval=FALSE,echo=TRUE}
 cellLabels[dengclust$clusterid == 10]
@@ -880,23 +816,15 @@ ggplot(as.data.frame(colData(deng_SCE)),
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/tscan-vs-truth-1.png")
 ```
 
-TSCAN gets the development trajectory the "wrong way around", in the sense that later pseudotime values correspond to early timepoints and vice versa. This is not inherently a problem (it is easy enough to reverse the ordering to get the intuitive interpretation of pseudotime), but overall it would be a stretch to suggest that TSCAN performs better than PCA on this dataset. (As it is a PCA-based method, perhaps this is not entirely surprising.)
+TSCAN的发展轨迹是"错误的方式"，因为后来的伪时间值对应于早期时间点，反之亦然。 这本身并不是一个问题（通过翻转排序以获得伪时间的直观解释），但总的来说，TSCAN在此数据集上的性能优于PCA（并不奇怪，因为这是一种基于PCA的方法）
 
-
-__Exercise 1__ Compare results for different numbers of clusters (`clusternum`).
+__练习1__ 比较不同聚类数目的结果(`clusternum`).
 
 ### monocle
 
-Monocle skips the clustering stage of TSCAN and directly builds a
-minimum spanning tree on a reduced dimension representation of the
-cells to connect all cells. Monocle then identifies the longest path
-in this tree to determine pseudotime. If the data contains diverging
-trajectories (i.e. one cell type differentiates into two different
-cell-types), monocle can identify these. Each of the resulting forked paths is
-defined as a separate cell state.
+Monocle跳过TSCAN的聚类阶段，并直接在细胞的降维尺度构建最小生成树以连接所有细胞。然后Monocle识别该树中最长的路径以确定伪时间。 Monocle可以识别发散轨迹（即一种细胞类型分化为两种不同的细胞类型）。每个分叉路径定义为单独的细胞状态。
 
-Unfortunately, Monocle does not work when all the genes are used, so
-we must carry out feature selection. First, we use M3Drop:
+不幸的是，Monocle在使用所有基因时不起作用，因此必须进行特征选择。首先，使用M3Drop：
 ```{r eval=FALSE,echo=TRUE}
 m3dGenes <- as.character(
     M3DropFeatureSelection(deng)$Gene
@@ -910,7 +838,7 @@ d <- deng[which(rownames(deng) %in% m3dGenes), ]
 d <- d[!duplicated(rownames(d)), ]
 ```
 
-Now run monocle:
+运行monocle:
 ```{r eval=FALSE,echo=TRUE}
 colnames(d) <- 1:ncol(d)
 geneNames <- rownames(d)
@@ -940,7 +868,7 @@ pseudotime_order_monocle <-
 ```{r monocle-all-genes, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/monocle-all-genes-1.png")
 ```
-We can again compare the inferred pseudotime to the known sampling timepoints.
+将推断的伪时间与已知的采样时间点进行比较。
 ```{r eval=FALSE,echo=TRUE}
 deng_SCE$pseudotime_monocle <- pseudotime_monocle$pseudotime
 ggplot(as.data.frame(colData(deng_SCE)), 
@@ -956,16 +884,16 @@ ggplot(as.data.frame(colData(deng_SCE)),
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/monocle-vs-truth-1.png")
 ```
 
-Monocle - at least with its default settings - performs poorly on these data. The "late2cell" group is completely separated from the "zy", "early2cell" and "mid2cell" cells (though these are correctly ordered), and there is no separation at all of "4cell", "8cell", "16cell" or any blast cell groups.
+Monocle  - 至少是默认设置 - 在这些数据上表现不佳。 "late2cell"与"zy"，"early2cell"和"mid2cell"细胞完全分离（尽管这些是正确排序的），并且"4cell"，"8cell"，"16cell”及其它囊胚期细胞完全没有分离。
 
 
 ### Diffusion maps
 
-[Diffusion maps](https://en.wikipedia.org/wiki/Diffusion_map) were introduced by [Ronald Coifman and Stephane Lafon](http://www.sciencedirect.com/science/article/pii/S1063520306000546), and the underlying idea is to assume that the data are samples from a diffusion process. The method infers the low-dimensional manifold by estimating the eigenvalues and eigenvectors for the diffusion operator related to the data.
+[Diffusion maps](https://en.wikipedia.org/wiki/Diffusion_map)由 [Ronald Coifman和Stephane Lafon](http://www.sciencedirect.com/science/article/pii/S1063520306000546)引入，其基本思想是假设数据是来自扩散过程的样本。 该方法通过估计与数据相关的扩散算子的特征值和特征向量来推断低维流形。
 
-[Angerer et al](https://academic.oup.com/bioinformatics/article/32/8/1241/1744143) have applied the diffusion maps concept to the analysis of single-cell RNA-seq data to create an R package called [destiny](http://bioconductor.org/packages/destiny).
+[Angerer et al](https://academic.oup.com/bioinformatics/article/32/8/1241/1744143)将diffusion map概念应用于scRNA-seq数据的分析，创建 [destiny](http://bioconductor.org/packages/destiny)的R包。
 
-We will take the ranko prder of cells in the first diffusion map component as "diffusion map pseudotime" here.
+我们将在这里将第一扩散映射分量中的细胞的顺序作为"diffusion map pseudotime"。
 
 ```{r eval=FALSE,echo=TRUE}
 deng <- logcounts(deng_SCE)
@@ -1000,31 +928,17 @@ ggplot(as.data.frame(colData(deng_SCE)),
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/destiny-deng-2.png")
 ```
 
-Like the other methods, using the first diffusion map component from destiny as pseudotime does a good job at ordering the early time-points (if we take high values as "earlier" in developement), but it is unable to distinguish the later ones.
+与其他方法一样，使用destiny中的第一个扩散映射成分作为伪时间可以很好地排序早期时间点，但它无法很好区分后者。
 
-__Exercise 2__ Do you get a better resolution between the later time points by considering additional eigenvectors?
-
-__Exercise 3__ How does the ordering change if you only use the genes identified by M3Drop?
+__练习2__ 通过考虑额外的特征向量，是否在较晚的时间点获得更好的分辨率？
+__练习3__ 如果只是用M3Drop识别的基因，顺序如何改变？
 
 
 ### SLICER
 
-The SLICER method is an algorithm for constructing trajectories that
-describe gene expression changes during a sequential biological
-process, just as Monocle and TSCAN are. SLICER is designed to capture
-highly nonlinear gene expression changes, automatically select genes
-related to the process, and detect multiple branch and loop features
-in the trajectory [@Welch2016-jr]. The SLICER R package is available
-from its [GitHub repository](https://github.com/jw156605/SLICER) and
-can be installed from there using the `devtools` package.
+SLICER方法是用于构建轨迹的算法，其描述在连续生物过程期间的基因表达变化，就像Monocle和TSCAN。 SLICER旨在捕获高度非线性基因表达变化，自动选择与过程相关的基因，并检测轨迹中的多个分支和环路特征[@Welch2016-jr]。SLICER R软件包可从GitHub获得，可以使用`devtools`安装。
 
-We use the `select_genes` function in SLICER to automatically select
-the genes to use in builing the cell trajectory. The function uses
-"neighbourhood variance" to identify genes that vary smoothly, rather
-than fluctuating randomly, across the set of cells. Following this, we
-determine which value of "k" (number of nearest neighbours) yields an embedding that
-most resembles a trajectory. Then we estimate the [locally linear
-embedding](https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction) of the cells.
+使用SLICER中的`select_genes`函数自动选择用于构建细胞轨迹的基因。 该函数使用"neighbourhood variance"来识别在一组细胞中平滑变化而不是随机波动的基因。然后确定哪个“k”值（最近邻居的数量）产生最类似于轨迹的embedding。然后估计细胞的 [locally linear embedding](https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction)。
 
 ```{r eval=FALSE,echo=TRUE}
 library("lle")
@@ -1040,12 +954,7 @@ plotReducedDim(deng_SCE, use_dimred = "LLE", colour_by = "cell_type2") +
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/slicer-analyis-1.png")
 ```
 
-With the locally linear embedding computed we can construct a
-k-nearest neighbour graph that is fully connected. This plot displays
-a (yellow) circle for each cell, with the cell ID number overlaid in
-blue. Here we show the graph computed using 10 nearest
-neighbours. Here, SLICER appears to detect one major trajectory with
-one branch.
+通过计算locally linear embedding，构建全连接的k-最近邻图。每个细胞用黄色圆圈表示，细胞ID蓝字位于中间。这里显示使用10个最近邻居计算的图表。这里SLICER似乎通过一个分支检测到一个主要轨迹。
 
 ```{r eval=FALSE,echo=TRUE}
 slicer_traj_graph <- conn_knn_graph(slicer_traj_lle, 10)
@@ -1055,8 +964,7 @@ plot(slicer_traj_graph, main = "Fully connected kNN graph from SLICER")
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/slicer-build-graph-1.png")
 ```
 
-From this graph we can identify "extreme" cells that are candidates
-for start/end cells in the trajectory.
+从该图可以congoing轨迹中起始/结束细胞的识别“极端”细胞。
 
 ```{r eval=FALSE,echo=TRUE}
 ends <- find_extreme_cells(slicer_traj_graph, slicer_traj_lle)
@@ -1066,7 +974,7 @@ start <- ends[1]
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/slicer-1.png")
 ```
 
-Having defined a start cell we can order the cells in the estimated pseudotime.
+定义起始细胞后，使用估计伪时间对细胞进行排序。
 
 ```{r eval=FALSE,echo=TRUE}
 pseudotime_order_slicer <- cell_order(slicer_traj_graph, start)
@@ -1083,9 +991,7 @@ pseudotime_slicer$pseudotime[pseudotime_order_slicer] <-
 deng_SCE$pseudotime_slicer <- pseudotime_slicer$pseudotime
 ```
 
-We can again compare the inferred pseudotime to the known sampling
-timepoints. SLICER does not provide a pseudotime value per se, just an
-ordering of cells.
+将推断的伪时间与已知的采样时间点进行比较，SLICER本身不提供伪时间值，只是细胞的排序。
 
 ```{r eval=FALSE,echo=TRUE}
 ggplot(as.data.frame(colData(deng_SCE)), 
@@ -1100,35 +1006,32 @@ ggplot(as.data.frame(colData(deng_SCE)),
 ```{r slicer-vs-truth, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/slicer-vs-truth-1.png")
 ```
-Like the previous method, SLICER here provides a good ordering for the
-early time points. It places "16cell" cells before "8cell" cells, but provides better ordering for blast cells than many of the earlier methods.
+与之前的方法一样，SLICER对早期时间点进行正确的排序，但是其将"16cell"期置于"8cell"期之前，但是对于囊胚细胞提供了比许多早期方法更好的排序。
 
-__Exercise 4__ How do the results change for different k? (e.g. k = 5) What about changing the number of nearest neighbours in
-the call to `conn_knn_graph`?
+__练习4__ 当k不同时，结果如何变化(比如k=5)，如何在调用`conn_knn_graph`时改变最近邻数目？
 
-__Exercise 5__ How does the ordering change if you use a different set
-of genes from those chosen by SLICER (e.g. the genes identified by M3Drop)?
+__练习5__ 当使用SLICER选择的另一组基因(比如M3Drop鉴定的基因)，轨迹如何变化？
 
 ### Ouija
 
-Ouija (http://kieranrcampbell.github.io/ouija/) takes a different approach from the pseudotime estimation methods we have looked at so far. Earlier methods have all been "unsupervised", which is to say that apart from perhaps selecting informative genes we do not supply the method with any prior information about how we expect certain genes or the trajectory as a whole to behave. 
+[Ouija](http://kieranrcampbell.github.io/ouija/)采用了与迄今为所研究的伪时间估计方法不同的策略。 早期的方法都是“无监督的”，也就是说，除了可能选择informative genes之外，我们不提供任何关于期望某些基因或整个轨迹表现的先验信息。
 
-Ouija, in contrast, is a probabilistic framework that allows for interpretable learning of single-cell pseudotimes using only small panels of marker genes. This method:
+相比之下，Ouija是一种概率框架，仅使用一小组marker基因来解释学习single-cell pseudotimes。 这个方法：
 
-* infers pseudotimes from a small number of marker genes letting you understand why the pseudotimes have been learned in terms of those genes;
-* provides parameter estimates (with uncertainty) for interpretable gene regulation behaviour (such as the peak time or the upregulation time); 
-* has a Bayesian hypothesis test to find genes regulated before others along the trajectory; 
-* identifies metastable states, ie discrete cell types along the continuous trajectory.
+* 从少数标记基因中推断出pseudotimes，让您了解为什么pseudotimes从这些基因中学习出来;
+* 为解释基因调控行为（如峰值时间或上调时间）提供参数估计（具有不确定性）;
+* 贝叶斯假设检验发现调控基因
+* 识别亚稳态，即沿连续轨迹的离散细胞类型。
 
-We will supply the following marker genes to Ouija (with timepoints where they are expected to be highly expressed):
+将向Ouija提供以下标记基因（以及高度表达的预计时间点）：
 
-* Early timepoints: Dazl, Rnf17, Sycp3, Nanog, Pou5f1, Fgf8, Egfr, Bmp5, Bmp15
-* Mid timepoints: Zscan4b, Foxa1, Prdm14, Sox21
-* Late timepoints: Creb3, Gpx4, Krt8, Elf5, Eomes, Cdx2, Tdgf1, Gdf3
+* 早期时间点: Dazl, Rnf17, Sycp3, Nanog, Pou5f1, Fgf8, Egfr, Bmp5, Bmp15
+* 中期时间点: Zscan4b, Foxa1, Prdm14, Sox21
+* 晚期时间点: Creb3, Gpx4, Krt8, Elf5, Eomes, Cdx2, Tdgf1, Gdf3
 
-With Ouija we can model genes as either exhibiting monotonic up or down regulation (known as switch-like behaviour), or transient behaviour where the gene briefly peaks. By default, Ouija assumes all genes exhibit switch-like behaviour (the authors assure us not to worry if we get it wrong - the noise model means incorrectly specifying a transient gene as switch-like has minimal effect).
+使用Ouija，我们可以将基因建模为表现为单调上调或下调（称为开关行为），或基因短暂达到峰值的瞬态行为。 默认情况下，Ouija假设所有基因都表现出类似开关的行为（作者保证我们不要担心，如果我们弄错了，噪声模型意味着错误地指定瞬态基因，因为类似开关的影响很小）。
 
-Here we can "cheat" a little and check that our selected marker genes do actually identify different timepoints of the differentiation process.
+在这里，我们可以"作弊"，并检查我们选择的标记基因确实确定了分化过程的不同时间点。
 
 ```{r eval=FALSE,echo=TRUE}
 ouija_markers_down <- c("Dazl", "Rnf17", "Sycp3", "Fgf8", 
@@ -1144,20 +1047,18 @@ plotExpression(deng_SCE, ouija_markers, x = "cell_type2", colour_by = "cell_type
 ```{r ouija-response-type, fig.height=11, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-response-type-1.png")
 ```
-In order to fit the pseudotimes wesimply call `ouija`, passing in the expected response types. Note that if no response types are provided then they are all assumed to be switch-like by default, which we will do here. The input to Ouija can be a cell-by-gene matrix of non-negative expression values, or an ExpressionSet object, or, happily, by selecting the `logcounts` values from a SingleCellExperiment object.
+为了拟合pseudotimes，只需调用`ouija`，传递预期的响应类型。 注意，如果没有提供响应类型，则默认情况下它们都被假定为类似开关。 Ouija的输入可以是非负表达值的cell-by-gene矩阵，也可以是ExpressionSet对象，或者SingleCellExperiment对象中选择`logcounts`值。
 
-We can apply prior information about whether genes are up- or down-regulated across the differentiation process, and also provide prior information about when the switch in expression or a peak in expression is likely to occur. 
+我们可以应用关于基因在分化过程中是上调还是下调的先验信息，并且还提供关于何时可能发生表达转换或表达峰值的先验信息。
 
-We can fit the Ouija model using either:
+使用下列拟合Ouija模型：
 
-* Hamiltonian Monte Carlo (HMC) - full MCMC inference where gradient information of the log-posterior is used to “guide” the random walk through the parameter space, or
-* Automatic Differentiation Variational Bayes (ADVI or simply VI) - approximate inference where the KL divergence to an approximate distribution is minimised.
+* Hamiltonian Monte Carlo (HMC) - MCMC推断，其中log-posterior梯度信息用于"引导"随机遍历参数空间，或
+* Automatic Differentiation Variational Bayes (ADVI or simply VI) - 近似推断，其中最小化KL近似分布偏差。 
 
-In general, HMC will provide more accurate inference with approximately correct posterior variance for all parameters. However, VB is orders of magnitude quicker than HMC and while it may underestimate posterior variance, the Ouija authors suggest that anecdotally it often performs as well as HMC for discovering posterior pseudotimes.
+一般而言，HMC将为所有参数提供更准确的推理和近似正确的后验方差。 然而，VB比HMC快几个数量级，虽然它可能低估了后验方差，但是Ouija的作者认为，通常情况下，其在发现后验pseudotimes和HMC效果相同。
 
-To help the Ouija model, we provide it with prior information about the strength of switches for up- and down-regulated genes. By setting switch strength to -10 for down-regulated genes and 10 for up-regulated genes with a prior strength standard deviation of 0.5 we are telling the model that we are confident about the expected behaviour of these genes across the differentiation process.
-
-
+为了帮助Ouija模型，我们为它提供了关于上调和下调基因的开关强度的先验信息。 通过将下调基因的开关强度设置为-10，将上调基因的开关强度设置为10，先验强度标准差为0.5，告诉模型我们对这些基因在分化过程中的预期行为充满信心。
 ```{r ouija-fit, eval=FALSE,echo=TRUE}
 options(mc.cores = parallel::detectCores())
 response_type <- c(rep("switch", length(ouija_markers_down) + 
@@ -1179,7 +1080,7 @@ garbage <- capture.output(
 print(oui_vb)
 ```
 
-We can plot the gene expression over pseudotime along with the maximum a posteriori (MAP) estimates of the mean function (the sigmoid or Gaussian transient function) using the plot_expression function. 
+使用plot_expression函数绘制伪时间基因表达以及平均函数（sigmoid或高斯瞬态函数）的最大后验（MAP）估计。
 
 ```{r eval=FALSE,echo=TRUE}
 plot_expression(oui_vb)
@@ -1188,7 +1089,7 @@ plot_expression(oui_vb)
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-plot-exprs-1.png")
 ```
 
-We can also visualise when in the trajectory gene regulation behaviour occurs, either in the form of the switch time or the peak time (for switch-like or transient genes) using the plot_switch_times and plot_transient_times functions:
+使用plot_switch_times和plot_transient_times函数，在轨迹基因调控行为发生时，以switch时间或峰值时间（对于类似开关或瞬态基因）的形式进行可视化：
 
 ```{r eval=FALSE,echo=TRUE}
 plot_switch_times(oui_vb)
@@ -1202,7 +1103,7 @@ plot_peak_times(oui_vb)
 ```{r echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-plot-switch-times-2.png")
 ```
-Identify metastable states using consistency matrices.
+使用一致性矩阵识别亚稳态。
 
 ```{r eval=FALSE,echo=TRUE}
 cmo <- consistency_matrix(oui_vb)
@@ -1245,9 +1146,9 @@ ggplot(as.data.frame(colData(deng_SCE)),
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-pseudotime-2.png")
 ```
 
-Ouija does quite well in the ordering of the cells here, although it can be sensitive to the choice of marker genes and prior information supplied. How do the results change if you select different marker genes or change the priors?
+虽然Ouija对标记基因的选择和提供的先验信息敏感，但Ouija在细胞的排序方面表现相当不错。 如果选择不同的标记基因或更改先验信息，结果会如何变化？
 
-Ouija identifies four metastable states here, which we might annotate as  "zygote/2cell", "4/8/16 cell", "blast1" and "blast2".
+Ouija识别四种亚稳态，将其注释为"zygote/2cell", "4/8/16 cell", "blast1" and "blast2"。
 
 ```{r eval=FALSE,echo=TRUE}
 ggplot(as.data.frame(colData(deng_SCE)), 
@@ -1263,14 +1164,12 @@ ggplot(as.data.frame(colData(deng_SCE)),
 ```{r ouija-states, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/ouija-states-1.png")
 ```
-A common analysis is to work out the regulation orderings of genes. For example, is gene A upregulated before gene B? Does gene C peak before the downregulation of gene D? Ouija answers these questions in terms of a Bayesian hypothesis test of whether the difference in regulation timing (either switch time or peak time) is significantly different to 0. This is collated using the gene_regulation function.
+一个常见的分析是基因的调节顺序。 例如，基因A在基因B之前是否上调？ 基因C在基因D下调前是否达到峰值？ Ouija根据贝叶斯假设检验来回答这些问题，该检验调控时间的差异（switch时间或峰值时间）是否和0有显著差异。
 
 
 ```{r ouija-regulation, eval=FALSE,echo=TRUE}
 gene_regs <- gene_regulation(oui_vb)
 head(gene_regs)
-```
-```{r echo=TRUE, eval=FALSE}
 ## # A tibble: 6 x 7
 ## # Groups:   label, gene_A [6]
 ##   label         gene_A gene_B mean_difference lower_95 upper_95 significant
@@ -1283,16 +1182,15 @@ head(gene_regs)
 ## 6 Bmp15 - Gdf3  Bmp15  Gdf3            0.0592  2.06e-4   0.114  TRUE
 ```
 
-What conclusions can you draw from the gene regulation output from Ouija?
+可以从Ouija的基因调控输出中得出什么结论？
 
-If you have time, you might try the HMC inference method and see if that changes the Ouija results in any way.
+尝试HMC推断，查看Ouija结果是否变化？
 
+### 方法比较 {#comparison-of-the-methods}
 
-### Comparison of the methods
+如何比较TSCAN，Monocle，Diffusion Map，SLICER和Ouija推断出的轨迹？
 
-How do the trajectories inferred by TSCAN, Monocle, Diffusion Map, SLICER and Ouija compare?
-
-TSCAN and Diffusion Map methods get the trajectory the "wrong way round", so we'll adjust that for these comparisons.
+TSCAN和Diffusion Map方法轨迹"方向错误"，比对之前先对其进行调整。
 
 ```{r eval=FALSE,echo=TRUE}
 df_pseudotime <- as.data.frame(
@@ -1313,24 +1211,18 @@ corrplot.mixed(cor(df_pseudotime, use = "na.or.complete"),
 ```{r compare-results, fig.width=10, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/compare-results-1.png")
 ```
-We see here that Ouija, TSCAN and SLICER all give trajectories that are similar and strongly correlated with PC1. Diffusion Map is less strongly correlated with these methods, and Monocle gives very different results.
 
+上图所示，Ouija，TSCAN和SLICER都提供了与PC1类似且强相关的轨迹。Diffusion Map与这些方法的相关性较低，而Monocle给出了非常不同的结果。
 
-__Exercise 6__: Compare destiny and SLICER to TSCAN, Monocle and Ouija in more depth. Where and how do they differ?
+__练习6__: 将destiny和SLICER与TSCAN，Monocle和Ouija进行更深入的比较。区别在哪里？
 
 ### Expression of genes through time
 
-Each package also enables the visualization of expression through pseudotime. Following individual genes is very helpful for identifying genes that play an important role in the differentiation process. We illustrate the procedure using the `Rhoa` gene.
+每个包可以通过伪时间显示基因表达。检查单个基因非常有助于鉴定在分化过程中起重要作用的基因。使用`Rhoa`基因进行演示。
 
-We have added the pseudotime values computed with all methods here to
-the `colData` slot of an `SCE` object. Having done that, the full
-plotting capabilities of the `scater` package can be used to
-investigate relationships between gene expression, cell populations
-and pseudotime. This is particularly useful for the packages such as
-SLICER that do not provide plotting functions.
+我们已经将使用所有方法计算的伪时间值添加到`SCE`对象的`colData`中。`scater`软件包的绘图功能可用于研究基因表达，细胞群和pseudotime的关系。 这对于不提供绘图功能的SLICER等软件包非常有用。
 
-
-__Principal components__
+__主成分__
 ```{r eval=FALSE,echo=TRUE}
 plotExpression(deng_SCE, "Rhoa", x = "PC1", 
                colour_by = "cell_type2", show_violin = FALSE,
@@ -1386,9 +1278,10 @@ plotExpression(deng_SCE, "Rhoa", x = "pseudotime_ouija",
 ```{r Rhoa-ouija, echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/pseudotime_files/figure-html/Rhoa-ouija-1.png")
 ```
-How many of these methods outperform the naive approach of using the first principal component to represent pseudotime for these data?
 
-__Exercise 7__: Repeat the exercise using a subset of the genes, e.g. the set of highly variable genes that can be obtained using `Brennecke_getVariableGenes()`
+这些方法中有多少优于使用第一主成分表示伪时间？
+
+__练习7__: 使用一部基因比如`Brennecke_getVariableGenes()`得到的HVG重复上面练习。
 
 ## Imputation
 
@@ -1407,39 +1300,24 @@ library(Rmagic)
 set.seed(1234567)
 ```
 
+如前所述，分析scRNA-seq数据时的主要挑战之一是存在零或dropout。Dropouts可能由于以下原因：
 
-As discussed previously, one of the main challenges when analyzing scRNA-seq 
-data is the presence of zeros, or dropouts. The dropouts are assumed to have 
-arisen for three possible reasons:
+* 基因不在细胞中表达，因此没有转录物
+* 基因表达，但由于某些原因，转录本在测序前丢失
+* 基因表达并捕获转录物并转化为cDNA，但测序深度低。
 
-* The gene was not expressed in the cell and hence there are no transcripts to sequence
-* The gene was expressed, but for some reason the transcripts were lost somewhere prior to sequencing
-* The gene was expressed and transcripts were captured and turned into cDNA, but the sequencing depth was not sufficient to produce any reads.
+因此，dropout可能是实验缺陷，如果是这种情况，希望提供计算校正。一种策略是将从表达矩阵插补缺失值，为了能够插补基因表达值，必须有一个基础模型。由于不知道哪些dropout是技术原因，哪些对应于真实缺失，因此插补是一项艰巨的挑战，并且倾向于在下游分析中产生 [假阳性结果](https://f1000research.com/articles/7-1740/v2)。 
 
-Thus, dropouts could be result of experimental shortcomings, and if this is 
-the case then we would like to provide computational corrections. One possible
- solution is to impute the dropouts in the expression matrix. To be able to 
-impute gene expression values, one must have an underlying model. However, 
-since we do not know which dropout events are technical artefacts and which 
-correspond to the transcript being truly absent, imputation is a difficult 
-challenge and prone to creating [false-positive results in downstream analysis](https://f1000research.com/articles/7-1740/v2).
-
-There are many different imputation methods available we will consider three 
-fast, published methods:
+目前有很多插值的方法，再次我们考虑三种运行速度快而且发表的方法：
 [MAGIC](https://github.com/pkathail/magic) [@Van_Dijk2017-bh], 
 [DrImpute](https://github.com/gongx030/DrImpute) and 
 [scImpute](https://github.com/Vivianstats/scImpute) [@Li2017-tz]. 
 
-DrImpute and scImpute both use a model to determine which zeros are technical
-and impute only those values. Both use clustering to identify a group of cells
-that are assumed to have homogenous expression. DrImpute imputes all values that
-are not consistently zero in all cells of a cluster. Whereas, scImpute uses a
-zero-inflated normal distribution fit to log-normalized expression values and
-imputed all inflated zeros. 
+DrImpute和scImpute都使用模型来确定哪些零值是技术原因造成的，并且对这些值进行插补。二者都使用聚类来识别具有同源表达的一组细胞。 DrImpute插补cluster中细胞表达不一致为0的值。然而，scImpute使用零膨胀的正态分布拟合对数归一化的表达值并估算inflated零值。
 
 ### scImpute
 
-To test `scImpute`, we use the default parameters and we apply it to the Deng dataset that we have worked with before. scImpute takes a .csv or .txt file as an input:
+为测试scImpute，使用默认参数应用于Deng数据集。scImpute将.csv或.txt文件作为输入：
 
 ```{r eval=FALSE,echo=TRUE}
 deng <- readRDS("data/deng/deng-reads.rds")
@@ -1453,7 +1331,7 @@ scimpute(
     ncores = 2
 )
 ```
-Now we can compare the results with original data by considering a PCA plot
+通过PCA图来比较结果和原始数据
 
 ```{r eval=FALSE,echo=TRUE}
 res <- read.table("scimpute_count.txt")
@@ -1472,10 +1350,9 @@ plotPCA(
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-4-1.png")
 ```
 
-Compare this result to the original data in Chapter \@ref(clust-methods). What are the most significant differences?
+比较结果与章节\@ref(clust-methods)的原始数剧。最显著的差异是什么？
 
-We can examine the expression of specific genes to directly see the effect of
- imputation on the expression distribution.
+检查特定基因的表达，观察插补对表达分布的影响。
 ```{r eval=FALSE,echo=TRUE}
 plotExpression(res, c("Sox2", "Eomes", "Zscan4d", "Fgf4"))
 ```
@@ -1489,12 +1366,14 @@ plotExpression(deng, c("Sox2", "Eomes", "Zscan4d", "Fgf4"))
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-5-2.png")
 ```
 
-To evaluate the impact of the imputation, we use `SC3` to cluster the imputed matrix
+为评价插补的效果，使用`SC3`对插补后的矩阵进行聚类。
 ```{r eval=FALSE,echo=TRUE}
 res <- sc3_estimate_k(res)
 metadata(res)$sc3$k_estimation
+## [1] 6
 res <- sc3(res, ks = 10, n_cores = 1, gene_filter = FALSE)
 adjustedRandIndex(colData(deng)$cell_type2, colData(res)$sc3_10_clusters)
+## [1] 0.5062983
 plotPCA(
     res, 
     colour_by = "sc3_10_clusters"
@@ -1504,11 +1383,11 @@ plotPCA(
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-6-1.png")
 ```
 
-__Exercise:__ Based on the PCA and the clustering results, do you think that imputation using `scImpute` is a good idea for the Deng dataset?
+__练习:__ 基于PCA和聚类结果，使用`scImpute`对Deng数据集进行插补效果好吗？
 
 ### DrImpute
 
-We can do the same for DrImpute. DrImpute runs on a log-normalized expression matrix directly in R, we generate this matrix using scater, then run DrImpute. Unlike scImpute, DrImpute considers the consensus imputation across a range of ks using two differ correlation distances:
+使用DrImpute进行同样的操作。DrImpute在R中直接运行对数标准化表达矩阵，使用scater生成此矩阵，然后运行DrImpute。 与scImpute不同，DrImpute使用两个不同的相关距离来考虑跨越一系列ks的一致性插补：
 
 ```{r eval=FALSE,echo=TRUE}
 deng <- normalize(deng)
@@ -1534,21 +1413,16 @@ plotExpression(res, c("Sox2", "Eomes", "Zscan4d", "Fgf4"))
 ```{r echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/imputation_files/figure-html/unnamed-chunk-7-2.png")
 ```
-__Exercise:__ Check the sc3 clustering of the DrImpute matrix, do you think that imputation using `DrImpute` is a good idea for the Deng dataset?
+__练习:__ 检查DrImpute矩阵的sc3聚类，`DrImpute`适合对Deng数据集进行插补吗？
 
 
 ### MAGIC
 
-__(due to technical issues please run this chapter as an exercise)__
+__(由于技术原因，本章作为练习)__
 
-MAGIC is a python package but the authors have provided an R package wrapper,
-so it can be run seemlessly from R.
+MAGIC是一个python包，但是作者提供了一个R包封装，所以它可以从R无缝地运行。
 
-Unlike scImpute and DrImpute, MAGIC smoothes the entire dataset. It imputes 
-zeros but also smoothes non-zero values to further exaggerate any structure
-within the dataset. Since it is based on a diffusion process, it specifically
-enhances trajectory-like structure in a dataset, in contrast to scImpute and 
-DrImpute which assume a cluster-like structure to the underlying data.
+与scImpute和DrImpute不同，MAGIC可以smooth整个数据集。它会对零值进行插补，但也会smooth非零值，以进一步扩大数据集中的结构。 由于它基于扩散过程，因此特别增强了数据集中类似轨迹的结构，与scImpute和DrImpute相反，后者假设数据具有类似cluster的结构。
 
 ```{r, eval=FALSE}
 res <- magic(t(deng@assays[["logcounts"]]), genes="all_genes", k=10, t="auto")
@@ -1569,9 +1443,9 @@ plotPCA(
 )
 ```
 
-Compare this result to the original data in Chapter \@ref(clust-methods). What are the most significant differences?
+比对结果与章节\@ref(clust-methods)的原始数据。显著差异是什么？
 
-To evaluate the impact of the imputation, we use `SC3` to cluster the imputed matrix
+为评价插补的效果，使用`SC3`对插补后的矩阵进行聚类。
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE, eval=FALSE}
 res <- sc3_estimate_k(res)
 metadata(res)$sc3$k_estimation
@@ -1583,52 +1457,35 @@ plotPCA(
 )
 ```
 
-__Exercise:__ MAGIC contains two parameters which affect the degree of imputation: `t` and `k`, what is the effect of increase/decreasing these parameters? (Hint: try t=1, t=10, k=2, k=50)
+__练习:__ MAGIC包含2个影响插补水平的参数：`t` 和 `k`，增大或减小这些参数，结果如何？(提示：尝试t=1, t=10, k=2, k=50)
 
 
+__练习:__ 基于PCA和聚类分析的`scImpute`和`MAGIC`有什么区别？哪一个更好用？
 
-__Exercise:__ What is the difference between `scImpute` and `MAGIC` based on the PCA and clustering analysis? Which one do you think is best to use?
-
-
-## Differential Expression (DE) analysis {#dechapter}
+## 差异表达分析 {#dechapter}
 
 ### Bulk RNA-seq
 
-One of the most common types of analyses when working with bulk RNA-seq
-data is to identify differentially expressed genes. By comparing the
-genes that change between two conditions, e.g. mutant and wild-type or
-stimulated and unstimulated, it is possible to characterize the
-molecular mechanisms underlying the change.
+bulk RNA-seq数据最常见的分析类型之一是鉴定差异表达的基因。通过比较在两种条件下变化的基因，例如 突变体和野生型或刺激和未刺激的，寻找背后的分子机制。
 
-Several different methods,
-e.g. [DESeq2](https://bioconductor.org/packages/DESeq2) and
-[edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html),
-have been developed for bulk RNA-seq. Moreover, there are also
-extensive
-[datasets](http://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-9-r95)
-available where the RNA-seq data has been validated using
-RT-qPCR. These data can be used to benchmark DE finding algorithms and the available evidence suggests that the algorithms are performing quite well.
+用于bulk RNA-seq差异表达分析有几种不同的方法，比如 [DESeq2](https://bioconductor.org/packages/DESeq2)和
+[edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html),而且有大量的 [数据集](http://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-9-r95)，其中RNA-seq数据被RT-qPCR验证。这些数据可以对差异表达分析的算法进行基准测试。现有的证据表明算法表现不错。
 
 ### Single cell RNA-seq
 
-In contrast to bulk RNA-seq, in scRNA-seq we usually do not have a defined
-set of experimental conditions. Instead, as was shown in a previous chapter
-(\@ref(clust-methods)) we can identify the cell groups by using an unsupervised
-clustering approach. Once the groups have been identified one can find differentially
-expressed genes either by comparing the differences in variance between the groups (like the Kruskal-Wallis test implemented in SC3), or by comparing gene expression between clusters in a pairwise manner. In the following chapter we will mainly consider tools developed for pairwise comparisons.
+与bulk RNA-seq相反，在scRNA-seq中，通常没有一组确定的实验条件。如前一章(\@ref(clust-methods))所示，通过无监督的聚类方法来识别细胞群体，然后通过比较各群体之间的差异（如SC3的Kruskal-Wallis检验），或成对比较cluster中基因表达，找到差异表达的基因。 在下一章中，我们将主要考虑为成对比较开发的工具。
 
-### Differences in Distribution
+### 分布的差异{#Differences-in-Distribution}
 
-Unlike bulk RNA-seq, we generally have a large number of samples (i.e. cells) for each group we are comparing in single-cell experiments. Thus we can take advantage of the whole distribution of expression values in each group to identify differences between groups rather than only comparing estimates of mean-expression as is standard for bulk RNASeq.
+与bulk RNA-seq不同，在单细胞实验中，每个group有大量的样品（即细胞）。 因此，利用每组中表达值的完整分布来识别组间的差异，而不是向bulk RNA-seq中仅仅比较平均表达。
 
-There are two main approaches to comparing distributions. Firstly, we can use existing statistical models/distributions and fit the same type of model to the expression in each group then test for differences in the parameters for each model, or test whether the model fits better if a particular paramter is allowed to be different according to group. For instance in Chapter \@ref(dealing-with-confounders) we used edgeR to test whether allowing mean expression to be different in different batches significantly improved the fit of a negative binomial model of the data.
+主要有两种方法比较分布。首先，可以使用现有的统计模型/分布拟合到每个组中的表达，然后检验每个模型的参数差异，或者允许特定参数不同，模型是否拟合地更好。例如在章节\@ref(dealing-with-confounders)，使用edgeR检验在不同批次中允许平均表达不同是否显著提高数据的负二项模型的拟合。
 
-Alternatively, we can use a non-parametric test which does not assume that expression values follow any particular distribution, e.g. the [Kolmogorov-Smirnov test (KS-test)](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test). Non-parametric tests generally convert observed expression values to ranks and test whether the distribution of ranks for one group are signficantly different from the distribution of ranks for the other group. However, some non-parametric methods fail in the presence of a large number of tied values, such as the case for dropouts (zeros) in single-cell RNA-seq expression data. Moreover, if the conditions for a parametric test hold, then it will typically be more powerful than a non-parametric test.
+或者，使用非参数检验，该检验不假设表达值服从任何特定分布，例如， [Kolmogorov-Smirnov test (KS-test)](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test)。 非参数测试通常将观察到的表达值转换为rank并检验一组的rank分布是否与另一组的rank分布显著不同。然而，一些非参数方法不适用存在大量tied values，例如单细胞RNA-seq表达数据中的dropout的情况。 此外，如果参数检验的条件成立，那么它通常比非参数测试更强大。
 
-### Models of single-cell RNASeq data
+### scRNA-seq数据模型 {#Models-of-single-cell-RNASeq-data}
 
-The most common model of RNASeq data is the negative binomial model:
-
+最常用的RNA-seq数据模型是负二项分布模型：
 
 ```{r eval=FALSE,echo=TRUE}
 set.seed(1)
@@ -1645,16 +1502,15 @@ hist(
 ```{r nb-plot, fig.cap="Negative Binomial distribution of read counts for a single gene across 1000 cells", echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-intro_files/figure-html/nb-plot-1.png")
 ```
-Mean:
+均值:
 $\mu = mu$
 
-Variance:
+方差:
 $\sigma^2 = mu + mu^2/size$
 
-It is parameterized by the mean expression (mu) and the dispersion (size), which is inversely related to the variance. The negative binomial model fits bulk RNA-seq data very well and it is used for most statistical methods designed for such data. In addition, it has been show to fit the distribution of molecule counts obtained from data tagged by unique molecular identifiers (UMIs) quite well ([Grun et al. 2014](http://www.nature.com/nmeth/journal/v11/n6/full/nmeth.2930.html), [Islam et al. 2011](http://genome.cshlp.org/content/21/7/1160)).
+其有两个参数，平均表达值($\mu$)和离散程度(dispersion)，离散程度与方差负相关。负二项分布模型很好地拟合了bulk RNA-seq数据，并且应用于大多数统计方法。此外，它也很好地你好了UMI数据的molecule coutns分布([Grun et al. 2014](http://www.nature.com/nmeth/journal/v11/n6/full/nmeth.2930.html), [Islam et al. 2011](http://genome.cshlp.org/content/21/7/1160))。
 
-However, a raw negative binomial model does not fit full-length transcript data as well due to the high dropout rates relative to the non-zero read counts. For this type of data a variety of zero-inflated negative binomial models have been proposed (e.g. [MAST](https://bioconductor.org/packages/release/bioc/html/MAST.html), [SCDE](https://bioconductor.org/packages/release/bioc/html/scde.html)).
-
+然而由于相对于非零read counts的高dropout率，原始负二项分布模型不适合全长转录本数据。对于这种类型的数据，已经提出了各种零膨胀负二项模型，比如 [MAST](https://bioconductor.org/packages/release/bioc/html/MAST.html), [SCDE](https://bioconductor.org/packages/release/bioc/html/scde.html)。
 
 ```{r eval=FALSE,echo=TRUE}
 d <- 0.5;
@@ -1674,15 +1530,15 @@ hist(
 ```{r zero-inflation-plot, fig.cap="Zero-inflated Negative Binomial distribution", echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-intro_files/figure-html/zero-inflation-plot-1.png")
 ```
-Mean:
+均值:
 $\mu = mu \cdot (1 - d)$
 
-Variance:
+方差:
 $\sigma^2 = \mu \cdot (1-d) \cdot (1 + d \cdot \mu + \mu / size)$
 
-These models introduce a new parameter $d$, for the dropout rate, to the negative binomial model. As we saw in Chapter 19, the dropout rate of a gene is strongly correlated with the mean expression of the gene. Different zero-inflated negative binomial models use different relationships between mu and d and some may fit $\mu$ and $d$ to the expression of each gene independently.
+这个模型为dropout引入新的参数$d$到负二项分布模型，如第19章中所看到的，基因的dropout率与基因的平均表达密切相关。 不同的零膨胀负二项模型使用mu和d之间的不同关系，并且一些可以使$\mu$和$d$拟合每个基因的表达。
 
-Finally, several methods use a Poisson-Beta distribution which is based on a mechanistic model of transcriptional bursting. There is strong experimental support for this model ([Kim and Marioni, 2013](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-1-r7)) and it provides a good fit to scRNA-seq data but it is less easy to use than the negative-binomial models and much less existing methods upon which to build than the negative binomial model.
+最后，一些方法使用Poisson-Beta分布，该分布基于转录爆发的机制模型。 这个模型有很强的实验支持( [Kim and Marioni, 2013](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2013-14-1-r7))，它较好地拟合scRNA-seq数据，但它比负二项模型不容易使用，而且现有的方法交少。
 
 ```{r eval=FALSE,echo=TRUE}
 a <- 0.1
@@ -1701,20 +1557,19 @@ hist(
 ```{r pois-beta-plot, fit.cap="Poisson-Beta distribution", echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-intro_files/figure-html/pois-beta-plot-1.png")
 ```
-Mean:
+均值:
 $\mu = g \cdot a / (a + b)$
 
-Variance:
+方差:
 $\sigma^2 = g^2 \cdot a \cdot b/((a + b + 1) \cdot (a + b)^2)$
 
-This model uses three parameters: $a$ the rate of activation of transcription; $b$ the rate of inhibition of transcription; and $g$ the rate of transcript production while transcription is active at the locus. Differential expression methods may test each of the parameters for differences across groups or only one (often $g$).
+该模型使用三个参数：$a$转录激活率; $b$转录抑制率; 和$g$转录激活状态时转录本产生的速率。 差异表达方法可以检验每个参数的组间差异或仅一个（通常是$g$）。
 
-All of these models may be further expanded to explicitly account for other sources of gene expression differences such as batch-effect or library depth depending on the particular DE algorithm.
+所有这些模型可以进一步扩展来明确地解释基因表达差异的其他来源，例如批次效应或文库深度，这取决于特定的DE算法。
 
-__Exercise__: Vary the parameters of each distribution to explore how they affect the distribution of gene expression. How similar are the Poisson-Beta and Negative Binomial models?
+__练习__: 改变每个分布的参数，探索它们如何影响基因表达的分布。Poisson-Beta和Negative Binomial模型相似处在哪里？
 
-
-## DE in a real dataset
+## 差异表达分析实战 {#DE-in-a-real-dataset}
 
 ```{r, eval=FALSE,echo=TRUE}
 library(scRNA.seq.funcs)
@@ -1725,12 +1580,9 @@ library(ROCR)
 set.seed(1)
 ```
 
-### Introduction
+### 介绍
 
-To test different single-cell differential expression methods we will be using the Blischak dataset from Chapters 7-17.
-For this experiment bulk RNA-seq data for each cell-line was generated in addition to single-cell data. We will use the
-differentially expressed genes identified using standard methods on the respective bulk data as the ground truth for evaluating the
-accuracy of each single-cell method. To save time we have pre-computed these for you. You can run the commands below to load these data.
+为了测试不同的单细胞差异表达方法，我们使用第7-17章的Blischak数据集。对于该实验，除了单细胞数据之外，还产生每个细胞系的bulk RNA-seq数据。 使用标准方法分别在bulk RNA-seq和scRNA-seq鉴定差异表达基因，并用bulk RNA-seq结果评估单细胞方法准确性。为了节省时间，我们预先计算了这些。 可以运行以下命令来加载这些数据。
 
 ```{r eval=FALSE,echo=TRUE}
 DE <- read.table("data/tung/TPs.txt")
@@ -1741,7 +1593,7 @@ GroundTruth <- list(
 )
 ```
 
-This ground truth has been produce for the comparison of individual NA19101 to NA19239. Now load the respective single-cell data:
+比较NA19101到NA19239的基准已经产生，下面加载相应的单细胞数据：
 
 ```{r eval=FALSE,echo=TRUE}
 molecules <- read.table("data/tung/molecules.txt", sep = "\t")
@@ -1759,21 +1611,19 @@ norm <- t(t(counts)/lib_size * median(lib_size))
 # Variant of CPM for datasets with library sizes of fewer than 1 mil molecules
 ```
 
-Now we will compare various single-cell DE methods. Note that we will only be running methods which are available as R-packages and run relatively quickly.
+现在比较各种单细胞差异表达分析方法。请注意，这里只运行R语言环境并且运行速度相对较快的方法。
 
 ### Kolmogorov-Smirnov test
 
-The types of test that are easiest to work with are non-parametric
-ones. The most commonly used non-parametric test is the
-[Kolmogorov-Smirnov test](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test) (KS-test) and we can use it to compare the distributions for each gene in the two individuals.
+最容易使用的检验类型是非参数测试。最常用的非参数检验是 [Kolmogorov-Smirnov test](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test) (KS-test)，可以用它来比较两个个体中每个基因的分布。
 
-The KS-test quantifies the distance between the empirical cummulative distributions of the expression of each gene in each of the two populations. It is sensitive to changes in mean experession and changes in variability. However it assumes data is continuous and may perform poorly when data contains a large number of identical values (eg. zeros). Another issue with the KS-test is that it can be very sensitive for large sample sizes and thus it may end up as significant even though the magnitude of the difference is very small.
+KS检验量化了两个群体中每个基因表达的经验累积分布之间的距离。它对平均表达值的变化和方差的变化很敏感。 然而，它假设数据是连续的，并且当数据包含大量相同的值（例如，0）时可能表现不佳。 KS检验的另一个问题是它对于大样本量可能非常敏感，因此即使差异的幅度非常小，它也可能结果为显著。
 
 ```{r ks-statistic, echo=FALSE, out.width = '60%', fig.cap="Illustration of the two-sample Kolmogorov–Smirnov statistic. Red and blue lines each correspond to an empirical distribution function, and the black arrow is the two-sample KS statistic. (taken from [here](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test))"}
 knitr::include_graphics("figures/KS2_Example.png")
 ```
 
-Now run the test:
+运行KS检验:
 
 ```{r, eval=FALSE,echo=TRUE}
 pVals <- apply(
@@ -1787,21 +1637,25 @@ pVals <- apply(
 # multiple testing correction
 pVals <- p.adjust(pVals, method = "fdr")
 ```
-This code "applies" the function to each row (specified by 1) of the expression matrix, data. In the function we are returning just the p.value from the ks.test output. We can now consider how many of the ground truth positive and negative DE genes are detected by the KS-test:
 
-#### Evaluating Accuracy
+此代码将函数"appy"到表达矩阵的每一行（由1指定）。函数只返回ks.test输出的p.value。 我们现在可以考虑通过KS检验检测到多少true positive和true negative DE基因.
+
+#### 评价准确率
 
 ```{r eval=FALSE,echo=TRUE}
 sigDE <- names(pVals)[pVals < 0.05]
 length(sigDE) 
+## [1] 5095
 # Number of KS-DE genes
 sum(GroundTruth$DE %in% sigDE) 
+## [1] 792
 # Number of KS-DE genes that are true DE genes
 sum(GroundTruth$notDE %in% sigDE)
+## [1] 3190
 # Number of KS-DE genes that are truly not-DE
 ```
 
-As you can see many more of our ground truth negative genes were identified as DE by the KS-test (false positives) than ground truth positive genes (true positives), however this may be due to the larger number of notDE genes thus we typically normalize these counts as the True positive rate (TPR), TP/(TP + FN), and False positive rate (FPR), FP/(FP+TP).
+通过KS检验将基准中true negative基因识别为DE(假阳性)，但这可能是由于大量的f非DE基因。通常将这些计数归一化为真阳性率(TPR), TP/(TP + FN)和假阳性率 (FPR), FP/(FP+TP)。
 
 ```{r eval=FALSE,echo=TRUE}
 tp <- sum(GroundTruth$DE %in% sigDE)
@@ -1811,11 +1665,11 @@ fn <- sum(GroundTruth$DE %in% names(pVals)[pVals >= 0.05])
 tpr <- tp/(tp + fn)
 fpr <- fp/(fp + tn)
 cat(c(tpr, fpr))
+## 0.7346939 0.2944706
 ```
-Now we can see the TPR is much higher than the FPR indicating the KS test is identifying DE genes.
+TPR大于FPR，表明KS检验识别出差异表达基因。
 
-So far we've only evaluated the performance at a single significance threshold. Often it is informative to vary the threshold and evaluate performance across a range of values. This is then plotted as a receiver-operating-characteristic curve (ROC) and a general accuracy statistic can be calculated as the area under this curve (AUC). We will use the ROCR package to facilitate this plotting.
-
+目前为止，我们只评估了单个显著性阈值的性能。通常，可以改变阈值并评估一系列值的性能。 然后将其绘制为ROC(receiver-operating-characteristic curve)曲线，并且计算ROC曲线下的面积AUC。我们将使用ROCR包来绘图。
 ```{r eval=FALSE,echo=TRUE}
 # Only consider genes for which we know the ground truth
 pVals <- pVals[names(pVals) %in% GroundTruth$DE | 
@@ -1832,9 +1686,10 @@ knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-rea
 ```{r eval=FALSE,echo=TRUE}
 aucObj <- ROCR::performance(pred, "auc")
 aucObj@y.values[[1]] # AUC
+## [1] 0.7954796
 ```
 
-Finally to facilitate the comparisons of other DE methods let's put this code into a function so we don't need to repeat it:
+最后，为了便于比较其他DE方法，将这段代码放入一个函数中，这样就不需要重复它:
 
 ```{r eval=FALSE,echo=TRUE}
 DE_Quality_AUC <- function(pVals) {
@@ -1851,7 +1706,7 @@ DE_Quality_AUC <- function(pVals) {
 ```
 ### Wilcox/Mann-Whitney-U Test
 
-The Wilcox-rank-sum test is another non-parametric test, but tests specifically if values in one group are greater/less than the values in the other group. Thus it is often considered a test for difference in median expression between two groups; whereas the KS-test is sensitive to any change in distribution of expression values.
+The Wilcox-rank-sum检验是另一种非参数检验，检验一组中的值是否大于/小于另一组中的值。因此，它通常被认为是检验两组间表达值中位数差异; 而KS检验对表达值分布的任何变化都很敏感。
 
 ```{r eval=FALSE,echo=TRUE}
 pVals <- apply(
@@ -1865,6 +1720,7 @@ pVals <- apply(
 # multiple testing correction
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
+## [1] 0.8320326
 ```
 ```{r wilcox-plot, fig.cap="ROC curve for Wilcox test.", echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/wilcox-plot-1.png")
@@ -1872,7 +1728,7 @@ knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-rea
 
 ### edgeR
 
-We've already used edgeR for differential expression in Chapter \@ref(dealing-with-confounders). edgeR is based on a negative binomial model of gene expression and uses a generalized linear model (GLM) framework, the enables us to include other factors such as batch to the model.
+我们已经在章节\@ref(dealing-with-confounders)中使用了edgeR来计算差异表达。 edgeR基于基因表达的负二项式模型，并使用广义线性模型（GLM），使我们能够将其他因素（例如批次）包含到模型中。
 
 ```{r eval=FALSE,echo=TRUE}
 dge <- DGEList(
@@ -1890,6 +1746,7 @@ names(pVals) <- rownames(res$table)
 
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
+## [1] 0.8466764
 ```
 ```{r edger-plot, fig.cap="ROC curve for edgeR.", echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/edger-plot-1.png")
@@ -1897,7 +1754,7 @@ knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-rea
 
 ### Monocle
 
-[Monocle](https://bioconductor.org/packages/release/bioc/html/monocle.html) can use several different models for DE. For count data it recommends the Negative Binomial model (negbinomial.size). For normalized data it recommends log-transforming it then using a normal distribution (gaussianff). Similar to edgeR this method uses a GLM framework so in theory can account for batches, however in practice the model fails for this dataset if batches are included.
+[Monocle](https://bioconductor.org/packages/release/bioc/html/monocle.html)可以使用几种不同的DE模型。 对于count数据，它建议使用负二项模型（negbinomial.size）。对于标准化数据，对其进行对数变换使用正态分布（gaussianff）。 与edgeR类似，此方法使用GLM框架，因此理论上可以考虑批次效应，但实际上，如果包含批次，模型将不适用此数据集。
 
 ```{r eval=FALSE,echo=TRUE}
 pd <- data.frame(group = group, batch = batch)
@@ -1917,11 +1774,12 @@ pVals <- res[,3]
 names(pVals) <- rownames(res)
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
+## [1] 0.8252662
 ```
 ```{r Monocle-plot, fig.cap="ROC curve for Monocle.", echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/Monocle-plot-1.png")
 ```
-__Exercise__: Compare the results using the negative binomial model on counts and those from using the normal/gaussian model (`gaussianff()`) on log-transformed normalized counts.
+__练习__: 比较使用负二项式模型结果和对数变换使用正态/高斯模型(`gaussianff()`)模型结果。
 
 __Answer__:
 ```{r eval=FALSE,echo=TRUE}
@@ -1942,6 +1800,7 @@ pVals <- res[,3]
 names(pVals) <- rownames(res)
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
+## [1] 0.8294642
 ```
 ```{r Monocle-plot2, fig.cap="ROC curve for Monocle-gaussian.", echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/Monocle-plot2-1.png")
@@ -1949,7 +1808,7 @@ knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-rea
 
 ### MAST
 
-[MAST](https://bioconductor.org/packages/release/bioc/html/MAST.html) is based on a zero-inflated negative binomial model. It tests for differential expression using a hurdle model to combine tests of discrete (0 vs not zero) and continuous (non-zero values) aspects of gene expression. Again this uses a linear modelling framework to enable complex models to be considered.
+[MAST](https://bioconductor.org/packages/release/bioc/html/MAST.html)基于零膨胀负二项模型。 它使用hurdle模型检验差异表达，组合基因表达的离散（0对非0）检验和连续（非零值）检验。同样，其使用线性建模框架来考虑复杂模型。
 
 ```{r eval=FALSE,echo=TRUE}
 log_counts <- log(counts + 1) / log(2)
@@ -1973,18 +1832,19 @@ pVals <- unlist(summaryDt[summaryDt$component == "H",4]) # H = hurdle model
 names(pVals) <- unlist(summaryDt[summaryDt$component == "H",1])
 pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
+## [1] 0.8284046
 ```
 ```{r MAST-plot, fig.cap="ROC curve for MAST.", echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/de-real_files/figure-html/MAST-plot-1.png")
 ```
 
-### Slow Methods (>1h to run) 
+### Slow method(>1h) 
 
-These methods are too slow to run today but we encourage you to try them out on your own:
+这些方法今天运行速度太慢，但鼓励您自己尝试。
 
-### BPSC
+#### BPSC
 
-[BPSC](https://academic.oup.com/bioinformatics/article/32/14/2128/2288270/Beta-Poisson-model-for-single-cell-RNA-seq-data) uses the Poisson-Beta model of single-cell gene expression, which we discussed in the previous chapter, and combines it with generalized linear models which we've already encountered when using edgeR. BPSC performs comparisons of one or more groups to a reference group ("control") and can include other factors such as batches in the model.
+[BPSC](https://academic.oup.com/bioinformatics/article/32/14/2128/2288270/Beta-Poisson-model-for-single-cell-RNA-seq-data)使用单细胞基因表达的Poisson-Beta模型，并将与广义线性模型相结合。 BPSC将一个或多个组与参考组（"Control"）进行比较，并且可以包括其他因素，例如模型中的批次效应。
 
 ```{r,eval=FALSE,echo=TRUE}
 library(BPSC)
@@ -2001,8 +1861,9 @@ pVals <- p.adjust(pVals, method = "fdr")
 DE_Quality_AUC(pVals)
 ```
 
-### SCDE
-[SCDE](http://hms-dbmi.github.io/scde/) is the first single-cell specific DE method. It fits a zero-inflated negative binomial model to expression data using Bayesian statistics. The usage below tests for differences in mean expression of individual genes across groups but recent versions include methods to test for differences in mean expression or dispersion of groups of genes, usually representing a pathway.
+#### SCDE
+
+[SCDE](http://hms-dbmi.github.io/scde/)是单细胞特异性差异表达分析方法。它使用贝叶斯统计量将零膨胀负二项式模型拟合表达数据。 以下用法检验各组间基因的平均表达差异，但最近的版本包括检验平均表达差异或一组基因的离散程度，通常代表一条通路。
 
 ```{r, eval=FALSE,echo=TRUE}
 library(scde)
@@ -2046,7 +1907,7 @@ pVals <- pnorm(abs(resSCDE$cZ), lower.tail = FALSE) * 2
 DE_Quality_AUC(pVals)
 ```
 
-## Comparing/Combining scRNASeq datasets
+## 比较/组合scRNA-seq数据集
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 library(knitr)
@@ -2059,21 +1920,11 @@ library(scater)
 library(SingleCellExperiment)
 ```
 
-### Introduction
+### 介绍
 
-As more and more scRNA-seq datasets become available, carrying merged_seurat comparisons between them is key. There are two main
-approaches to comparing scRNASeq datasets. The first approach is "label-centric" which is focused on trying
- to identify equivalent cell-types/states across datasets by comparing individual cells or groups of cells. The other approach
- is "cross-dataset normalization" which attempts to computationally remove experiment-specific technical/biological effects
-so that data from multiple experiments can be combined and jointly analyzed.
+随着scRNA-seq数据集越来越多，进行merged_seurat比较是关键。比较scRNA-Seq数据集有两种主要方法。 第一种方法是"label-centric"，其通过比较单个细胞或一组细胞识别数据集间相同的细胞类型/状态。另一种方法是"cross-dataset normalization"，试图去除特定实验的技术/生物效应，使得组合联合分析来自多个实验的数据。
 
-The label-centric approach can be used with dataset with high-confidence cell-annotations, e.g. the Human Cell Atlas (HCA)
-[@Regev2017-mw] or the Tabula Muris [@tabula2018single] once they are completed, to project cells or clusters from a new sample onto
-this reference to consider tissue composition and/or identify cells with novel/unknown identity. Conceptually, such
-projections are similar to the popular BLAST method [@Altschul1990-ts], which makes it possible to quickly find the closest
-match in a database for a newly identified nucleotide or amino acid sequence. The label-centric approach can also be used to
-compare datasets of similar biological origin collected by different labs to ensure that the annotation and the analysis is
-consistent.
+label-centric方法可以与高置信度细胞注释的数据集一起使用，例如，人类细胞图谱（HCA）[@Regev2017-mw]或Tabula Muris [@tabula2018single]。一旦这些项目完成，将新样本的细胞或cluster投影到该参考图谱上以识别组织成分或识别细胞类型。 从概念上讲，这种预测类似于流行的BLAST方法[@Altschul1990-ts]，这使得可以在数据库中快速找到最接近的匹配，用于新鉴定的核苷酸或氨基酸序列。 label-centric方法还可用于比较由不同实验室收集的相似生物来源的数据集，以确保注释和分析是一致的。
 
 ```{r, echo=FALSE, merged_seurat.width = '80%', fig.cap="Label-centric dataset comparison can be used to compare the annotations of two different samples."}
 knitr::include_graphics("figures/CourseCompareTypes.png")
@@ -2083,34 +1934,31 @@ knitr::include_graphics("figures/CourseCompareTypes.png")
 knitr::include_graphics("figures/CourseAtlasAssignment.png")
 ```
 
-The cross-dataset normalization approach can also be used to compare datasets of similar biological origin, unlike the label-centric approach it enables the join analysis of multiple datasets to facilitate the identification of rare cell-types which may to too sparsely sampled in each individual dataset to be reliably detected. However, cross-dataset normalization is not applicable to very large and diverse references since it assumes a significant portion of the biological variablility in each of the datasets overlaps with others.
-
+cross-dataset normalization方法也可用于比较相似生物来源的数据集，不像label-centric方法，它可以实现多个数据集的联合分析，以便于更可靠地识别稀有细胞类型，其可能在每个个体中过于稀疏地采样。然而，cross-dataset normalization不适用于非常大且不同的reference，因为它假设每个数据集中的生物变异性的重要部分与其他数据集重叠。
 
 ```{r, echo=FALSE, merged_seurat.width = '80%', fig.cap="Cross-dataset normalization enables joint-analysis of 2+ scRNASeq datasets."}
 knitr::include_graphics("figures/CourseCrossNorm.png")
 ```
 ### Datasets
 
-We will running these methods on two human pancreas datasets: [@Muraro2016-yk] and [@Segerstolpe2016-wc]. Since the pancreas has been widely studied, these datasets are well annotated.
+在两个人胰腺数据集上运行这些方法：[@Muraro2016-yk]和[@Segerstolpe2016-wc]。 由于胰腺已被广泛研究，这些数据集得到了很好的注释。
 ```{r}
 muraro <- readRDS("data/pancreas/muraro.rds")
 segerstolpe <- readRDS("data/pancreas/segerstolpe.rds")
 ```
 
-This data has already been formatted for scmap. Cell type labels must be stored in the `cell_type1` column of the `colData` slots, and gene ids that are consistent across both datasets must be stored in the `feature_symbol` column of the `rowData` slots.
+此数据已针对scmap格式化。细胞类型label必须存储在`colData`的`cell_type1`列中，并且两个数据集之间一致的基因ID必须存储在`rowData`的`feature_symbol`列中。
 
-First, lets check our gene-ids match across both datasets:
+首先，检查两个数据集中的gene-id匹配情况:
 ```{r eval=FALSE,echo=TRUE}
 sum(rowData(muraro)$feature_symbol %in% rowData(segerstolpe)$feature_symbol)/nrow(muraro)
 ## [1] 0.9599519
 sum(rowData(segerstolpe)$feature_symbol %in% rowData(muraro)$feature_symbol)/nrow(segerstolpe)
 ## [1] 0.719334
 ```
-Here we can see that 96% of the genes present in muraro match genes in segerstople and 72% of genes in segerstolpe are match
-genes in muraro. This is as expected because the segerstolpe dataset was more deeply sequenced than the muraro dataset.
-However, it highlights some of the difficulties in comparing scRNASeq datasets.
+muraro中6％基因与segerstople中的基因匹配，而segerstolpe中72％的基因与muraro匹配。因为segerstolpe数据集比muraro数据集测序深度更深。 然而，它突出了比较scRNA-Seq数据集的一些困难。
 
-We can confirm this by checking the overall size of these two datasets.
+通过检查这两个数据集的总体大小来确认这一点。
 ```{r eval=FALSE,echo=TRUE}
 dim(muraro)
 ## [1] 19127  2126
@@ -2118,7 +1966,7 @@ dim(segerstolpe)
 ## [1] 25525  3514
 ```
 
-In addition, we can check the cell-type annotations for each of these dataset using the command below:
+此外，使用以下命令检查每个数据集的细胞类型注释：
 
 ```{r eval=FALSE,echo=TRUE}
 summary(factor(colData(muraro)$cell_type1))
@@ -2138,40 +1986,28 @@ summary(factor(colData(segerstolpe)$cell_type1))
 ##                    PSC           unclassified unclassified endocrine 
 ##                     54                      2                     41
 ```
-Here we can see that even though both datasets considered the same biological tissue the two datasets, they have been
-annotated with slightly different sets of cell-types. If you are familiar withpancreas biology you might recognize
-that the pancreatic stellate cells (PSCs) in segerstolpe are a type of mesenchymal stem cell which would fall under
-the "mesenchymal" type in muraro. However, it isn't clear whether these two annotations should be considered synonymous
-or not. We can use label-centric comparison methods to determine if these two cell-type annotations are indeed equivalent.
 
-Alternatively, we might be interested in understanding the function of those cells that were "unclassified endocrine" or were deemed
-too poor quality ("not applicable") for the original clustering in each dataset by leveraging in formation across datasets. Either
-we could attempt to infer which of the existing annotations they most likely belong to using label-centric approaches or we could try
-to uncover a novel cell-type among them (or a sub-type within the existing annotations) using cross-dataset normalization.
+即使两个数据集来自相同的生物组织，注释细胞类型也略有差异。如果您熟悉胰腺生物学，您可能会认识到segerstolpe中的pancreatic stellate cells (PSCs)是一种间充质干细胞，在muraro中属于"mesenchymal“类型。但是，目前尚不清楚这两个注释是否应该被视为同义词。 可以使用label-centric的比较方法来确定这两个细胞类型的注释是否确实相同。
 
-To simplify our demonstration analyses we will remove the small classes of unassigned cells, and the poor quality cells. We will retain the "unclassified endocrine" to
-see if any of these methods can elucidate what cell-type they belong to.
+或者，我们可以通过利用数据集中的形成来理解那些“unclassified endocrine”或被认为对每个数据集中的原始聚类质量太差（"not applicable"）的细胞的功能。 我们可以尝试使用label-centric的方法来推断它们最可能属于哪个现有注释，或者使用cross-dataset normalization来揭示其中的新颖细胞类型（或现有注释中的子类型）。
+
+为了简化演示分析，我们将删除少量未分配类型的细胞和质量较差的细胞。但保留"unclassified endocrine"，看看这些方法中是否阐明它们属于哪种细胞类型。
 
 ```{r}
 segerstolpe <- segerstolpe[,colData(segerstolpe)$cell_type1 != "unclassified"]
 segerstolpe <- segerstolpe[,colData(segerstolpe)$cell_type1 != "not applicable",]
 muraro <- muraro[,colData(muraro)$cell_type1 != "unclear"]
 ```
-### Projecting cells onto annotated cell-types (scmap)
+### scmap
 
 ```{r}
 library(scmap)
 set.seed(1234567)
 ```
+`scmap` [@Kiselev2017-nb]，一种将scRNA-seq实验细胞投影到其他实验中鉴定的细胞类型上的方法。 此外，云版本的scmap可以免费运行，但有merged_seurat限制， [http://www.hemberg-lab.cloud/scmap](http://www.hemberg-lab.cloud/scmap)。
 
-We recently developed `scmap` [@Kiselev2017-nb] - a method for projecting cells from a scRNA-seq experiment onto the cell-types identified in other experiments. Additionally, a cloud version of `scmap` can be run for free, withmerged_seurat restrictions, from [http://www.hemberg-lab.cloud/scmap](http://www.hemberg-lab.cloud/scmap).
-
-
-#### Feature Selection
-Once we have a `SingleCellExperiment` object we can run `scmap`. First we have to build the "index" of our reference
-clusters. Since we want to know whether PSCs and mesenchymal cells are synonymous we will project each dataset to the
-other so we will build an index for each dataset. This requires first selecting the most informative features for the
-reference dataset.
+#### 特征选择
+创建`SingleCellExperiment`对象后可以直接运行`scmap`。首先构建参考cluster的"索引"。 由于我们想知道PSC和间充质细胞是否是同义词，需要将每个数据集投射到另一个，因此为每个数据集构建索引。 这需要首先为参考数据集选择信息量最大的特征。
 
 ```{r}
 muraro <- selectFeatures(muraro, suppress_plot = FALSE)
@@ -2180,7 +2016,7 @@ muraro <- selectFeatures(muraro, suppress_plot = FALSE)
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projection_files/figure-html/unnamed-chunk-12-1.png")
 ```
 
-Genes highlighted with the red colour will be used in the futher analysis (projection).
+红色高亮的基因将用于进一步分析（投影）。
 
 ```{r}
 segerstolpe <- selectFeatures(segerstolpe, suppress_plot = FALSE)
@@ -2188,15 +2024,15 @@ segerstolpe <- selectFeatures(segerstolpe, suppress_plot = FALSE)
 ```{r, eval=FALSE,echo=FALSE}
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projection_files/figure-html/unnamed-chunk-13-1.png")
 ```
-From the y-axis of these plots we can see that scmap uses a dropmerged_seurat-based feature selection method.
+从这些图的y轴可以看出scmap使用基于dropmerged_seurat的特征选择方法。
 
-Now calculate the cell-type index:
+计算细胞类型索引:
 ```{r}
 muraro <- indexCluster(muraro)
 segerstolpe <- indexCluster(segerstolpe)
 ```
 
-We can also visualize the index:
+可视化索引:
 ```{r eval=FALSE,echo=TRUE}
 heatmap(as.matrix(metadata(muraro)$scmap_cluster_index))
 ```
@@ -2204,22 +2040,22 @@ heatmap(as.matrix(metadata(muraro)$scmap_cluster_index))
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projection_files/figure-html/unnamed-chunk-15-1.png")
 ```
 
-You may want to adjust your features using the `setFeatures` function if features are too heavily concentrated in only a few cell-types. In this case the dropmerged_seurat-based features look good so we will just them.
+如果特征过于集中在少数细胞类型中，可以使用`setFeatures`函数调整特征。
 
-__Exercise__
-Using the rowData of each dataset how many genes were selected as features in both datasets? What does this tell you abmerged_seurat these datasets?
+__练习__
+使用每个数据集的rowData，两个数据集中有多少基因作为特征？
 
-__Answer__
+__答案__
 ```{r, include=FALSE, eval=FALSE,echo=TRUE}
 ans = sum(rowData(muraro)[rowData(muraro)$scmap_features, "feature_symbol"] %in% rowData(segerstolpe)[rowData(segerstolpe)$scmap_features, "feature_symbol"])
 print(ans)
 ```
 
-#### Projecting
+#### 投影
 
-scmap computes the distance from each cell to each cell-type in the reference index, then applies an empirically derived threshold to determine which cells are assigned to the closest reference cell-type and which are unassigned. To account for differences in sequencing depth distance is calculated using the spearman correlation and cosine distance and only cells with a consistent assignment with both distances are returned as assigned.
+scmap计算从每个细胞到参考索引中每个细胞类型的距离，然后应用经验阈值来确定将哪些细胞分配给最近的参考细胞类型以及哪些细胞未分配。 为了解释测序深度的差异，使用spearman相关系数和余弦距离计算距离，并且仅当两种距离返回一致结果时，将结果分配给该细胞。
 
-We will project the `segerstolpe` dataset to `muraro` dataset:
+将`segerstolpe`投影到`muraro`数据集:
 ```{r,warning=FALSE}
 seger_to_muraro <- scmapCluster(
   projection = segerstolpe,
@@ -2229,7 +2065,7 @@ seger_to_muraro <- scmapCluster(
 )
 ```
 
-and `muraro` onto `segerstolpe`
+将`muraro`投影到`segerstolpe`
 
 ```{r, warning=FALSE}
 muraro_to_seger <- scmapCluster(
@@ -2239,9 +2075,9 @@ muraro_to_seger <- scmapCluster(
   )
 )
 ```
-Note that in each case we are projecting to a single dataset but that this could be extended to any number of datasets for which we have computed indices.
+请注意，在每种情况下，我们都会投影到单个数据集，但这可以扩展到任意数量已计算索引的数据集。
 
-Now lets compare the original cell-type labels with the projected labels:
+比较原始细胞类型label与投影label：
 ```{r eval=FALSE,echo=TRUE}
 table(colData(muraro)$cell_type1, muraro_to_seger$scmap_cluster_labs)
 ##              
@@ -2267,7 +2103,8 @@ table(colData(muraro)$cell_type1, muraro_to_seger$scmap_cluster_labs)
 ##   gamma             0    95            0   0          4
 ##   mesenchymal       0     0            0  77          2
 ```
-Here we can see that cell-types do map to their equivalents in segerstolpe, and importantly we see that all but one of the "mesenchymal" cells were assigned to the "PSC" class.
+
+在这里，我们可以看到细胞类型映射到segerstolpe，重要的是除了一个"间充质“细胞之外的所有细胞都被分配到“PSC”类。
 
 ```{r eval=FALSE,echo=TRUE}
 table(colData(segerstolpe)$cell_type1, seger_to_muraro$scmap_cluster_labs)
@@ -2302,28 +2139,28 @@ table(colData(segerstolpe)$cell_type1, seger_to_muraro$scmap_cluster_labs)
 ##   PSC                          0     0          53          0
 ##   unclassified endocrine       0     0           0         41
 ```
-Again we see cell-types match each other and that all but one of the "PSCs" match the "mesenchymal" cells providing strong evidence that these two annotations should be considered synonymous.
+再次看到细胞类型相互匹配，除了"PSC"所有细胞除一个外都与"间充质"细胞相匹配，这提供了强有力的证据证明这两个注释应该被认为是同义词。
 
-We can also visualize these tables using a [Sankey diagram](https://developers.google.com/chart/interactive/docs/gallery/sankey):
+可以通过 [桑葚图](https://developers.google.com/chart/interactive/docs/gallery/sankey)对上述表格进行可视化:
+
 ```{r results='asis', tidy=FALSE}
 plot(getSankey(colData(muraro)$cell_type1,  muraro_to_seger$scmap_cluster_labs[,1], plot_height=400))
 ```
 
-__Exercise__
-How many of the previously unclassified cells would be be able to assign to cell-types using scmap?
+__练习__
 
-__Answer__
+之前未分类的细胞有多少可以使用scmap分配细胞类型？
+
+__答案__
 ```{r, eval=FALSE,echo=TRUE}
 t2 <- table(colData(segerstolpe)$cell_type1, seger_to_muraro$scmap_cluster_labs)
 seger_assigned <- sum(t2[c("unclassified endocrine"), 1:9])
 ```
-### Cell-to-Cell mapping
+### 细胞间映射
 
-scmap can also project each cell in one dataset to its approximate closest neighbouring cell in the reference dataset. This
-uses a highly optimized search algorithm allowing it to be scaled to very large references (in theory 100,000-millions of
-cells). However, this process is stochastic so we must fix the random seed to ensure we can reproduce our results.
+scmap还可以将一个数据集中的每个细胞投影到参考数据集中的近似最近邻细胞。 这使用高度优化的搜索算法，允许它扩展到非常大的参考空间（理论上是100,000万个细胞）。 但是，这个过程是随机的，因此必须固定随机种子以确保可以重现结果。
 
-We have already performed feature selection for this dataset so we can go straight to building the index.
+我们已经为此数据集进行了特征选择，可以直接构建索引。
 
 ```{r eval=FALSE,echo=TRUE}
 set.seed(193047)
@@ -2331,12 +2168,9 @@ segerstolpe <- indexCell(segerstolpe)
 muraro <- indexCell(muraro)
 ```
 
-In this case the index is a series of clusterings of each cell using different sets of features, parameters k and M are the
-number of clusters and the number of features used in each of these subclusterings. New cells are assigned to the nearest
- cluster in each subclustering to generate unique pattern of cluster assignments. We then find the cell in the reference
-dataset with the same or most similar pattern of cluster assignments.
+在这种情况下，索引是使用不同特征集的每个细胞的一系列聚类，参数k和M是聚类的数量和在这些子聚类中使用的特征的数量。 将新细胞分配给每个subcluster中最近的cluster，以生成唯一的聚类分配模式。 然后，在参考数据集中寻找具有相同或最相似的聚类分配模式的细胞。
 
-We can examine the cluster assignment patterns for the reference datasets using:
+检查参考数据集的聚类分配模式
 ```{r eval=FALSE,echo=TRUE}
 metadata(muraro)$scmap_cell_index$subclusters[1:5,1:5]
 ##      D28.1_1 D28.1_13 D28.1_15 D28.1_17 D28.1_2
@@ -2347,7 +2181,7 @@ metadata(muraro)$scmap_cell_index$subclusters[1:5,1:5]
 ## [5,]      39       44       23       34      32
 ```
 
-To project and find the `w` nearest neighbours we use a similar command as before:
+投影并寻找`w`最近邻：
 ```{r eval=FALSE,echo=TRUE}
 muraro_to_seger <- scmapCell(
   projection = muraro,
@@ -2358,7 +2192,7 @@ muraro_to_seger <- scmapCell(
 )
 ```
 
-We can again look at the results:
+查看结果:
 ```{r eval=FALSE,echo=TRUE}
 muraro_to_seger$seger[[1]][,1:5]
 ##      D28.1_1 D28.1_13 D28.1_15 D28.1_17 D28.1_2
@@ -2368,8 +2202,8 @@ muraro_to_seger$seger[[1]][,1:5]
 ## [4,]    2015     1833     1153     1882    1593
 ## [5,]    1159     1854     1731     1202    1078
 ```
-This shows the column number of the 5 nearest neighbours in segerstolpe to each of the cells in muraro. We could then calculate a pseudotime estimate, branch assignment, or other cell-level data by selecting the appropriate data from the colData of
-the segerstolpe data set. As a demonstration we will find the cell-type of the nearest neighbour of each cell.
+
+这显示了segerstolpe到muraro中的细胞5个最近邻居的列号。然后从segerstolpe数据的colData中选择适当的数据来计算伪时间估计，分支分配或其他细胞水平数据。作为演示，查找每个细胞的最近邻居的细胞类型。
 ```{r eval=FALSE,echo=TRUE}
 cell_type_NN <- colData(segerstolpe)$cell_type1[muraro_to_seger$seger[[1]][1,]]
 head(cell_type_NN)
@@ -2379,18 +2213,17 @@ head(cell_type_NN)
 
 ### Metaneighbour
 
-[Metaneighbour](https://www.biorxiv.org/content/early/2017/06/16/150524) is specifically designed to ask whether cell-type labels are consistent across datasets. It comes in two
-versions. First is a fully supervised method which assumes cell-types are known in all datasets and calculates how "good" those cell-type labels are. (The precise meaning of "good" will be described below). Alternatively, metaneighbour can estimate how similar all cell-types are to each other both within and across datasets. We will only be using the unsupervised version as it has much more general applicability and is easier to interpret the results of.
+[Metaneighbour](https://www.biorxiv.org/content/early/2017/06/16/150524)专门用于检查细胞类型是否在数据集之间保持一致。它有两个版本。 首先是一种完全监督的方法，它假设所有数据集中细胞类型一致，并计算这些细胞类型标记的"good"的程度。（下面将描述"good"的确切含义）。 或者，metaneighbour可以估计数据集内和数据集之间所有细胞类型彼此之间的相似程度。 我们将只使用无监督版本，因为它具有更广泛的适用性，并且更容易解释结果。
 
-Metaneighbour compares cell-types across datasets by building a cell-cell spearman correlation network. The method then tries to predict the label of each cell through weighted "votes" of its nearest-neighbours. Then scores the overall similarity between two clusters as the AUROC for assigning cells of typeA to typeB based on these weighted votes. AUROC of 1 would indicate all the cells of typeA were assigned to typeB before any other cells were, and an AUROC of 0.5 is what you would get if cells were being randomly assigned.
+Metaneighbour通过构建细胞-细胞spearman相关网络来比较数据集中的细胞类型。然后通过最近邻居的加权投票来预测细胞类型。 然后将两个cluster之间的整体相似性评分为AUROC，基于加权投票将类型A的细胞分配给类型B. AUROC为1表示在任何其他细胞出现之前，所有类型A的细胞都被分配到类型B，如果细胞随机分配，则AUROC为0.5。
 
-Metanighbour is just a couple of R functions not a complete package so we have to load them using `source`
+Metanighbour只是一些R函数而不是一个完整的R包，所以必须使用`source`加载它们
 ```{r eval=FALSE,echo=TRUE}
 source("utils/2017-08-28-runMN-US.R")
 ```
-#### Prepare Data
+#### 数据准备
 
-Metaneighbour requires all datasets to be combined into a single expression matrix prior to running:
+Metaneighbour要求在运行之前将所有数据集组合成单个表达矩阵：
 
 ```{r eval=FALSE,echo=TRUE}
 is.common <- rowData(muraro)$feature_symbol %in% rowData(segerstolpe)$feature_symbol
@@ -2410,13 +2243,13 @@ pheno <- data.frame(Sample_ID = colnames(combined_logcounts),
 rownames(pheno) <- colnames(combined_logcounts)
 ```
 
-Metaneighbor includes a feature selection method to identify highly variable genes.
+Metaneighbor包括识别HVG的特征选择方法。
 
 ```{r eval=FALSE,echo=TRUE}
 var.genes = get_variable_genes(combined_logcounts, pheno)
 ```
 
-Since Metaneighbor is much slower than `scmap`, we will down sample these datasets.
+由于Metaneighbor比`scmap`慢得多，对这些数据集进行下采样。
 
 ```{r eval=FALSE,echo=TRUE}
 subset <- sample(1:nrow(pheno), 2000)
@@ -2426,9 +2259,7 @@ cell_type_labels <- cell_type_labels[subset]
 dataset_labels <- dataset_labels[subset]
 ```
 
-Now we are ready to run Metaneighbor. First we will run the unsupervised
-version that will let us see which cell-types are most similar across the
-two datasets.
+现在准备运行Metaneighbor。首先，运行无监督版本，查看两个数据集中哪些细胞类型最相似。
 
 ```{r eval=FALSE,echo=TRUE}
 unsup <- run_MetaNeighbor_US(var.genes, combined_logcounts, unique(pheno$Celltype), pheno)
@@ -2439,13 +2270,13 @@ knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projec
 ```
 
 ### mnnCorrect
-[mnnCorrect](https://www.biorxiv.org/content/early/2017/07/18/165118) corrects datasets to facilitate joint analysis. It order to account for differences in composition between two replicates or two different experiments it first matches invidual cells across experiments to find the overlaping biologicial structure. Using that overlap it learns which dimensions of expression correspond to the biological state and which dimensions correspond to batch/experiment effect; mnnCorrect assumes these dimensions are orthologal to each other in high dimensional expression space. Finally it removes the batch/experiment effects from the entire expression matrix to return the corrected matrix.
+[mnnCorrect](https://www.biorxiv.org/content/early/2017/07/18/165118)校正数据集以促进联合分析。 为了解释两个重复或两个不同实验之间的组成差异，首先匹配实验中的单个细胞以找到重叠的生物结构。 使用该重叠结构学习表达的哪个维度对应于生物状态以及哪个维度对应于批次/实验效应; mnnCorrect假设这些维度在高维表达空间中是彼此正交的。 最后，从整个表达矩阵中删除批次/实验效应，返回校正后的矩阵。
 
-To match individual cells to each other across datasets, mnnCorrect uses the cosine distance to avoid library-size effect then identifies mututal nearest neighbours (`k` determines to neighbourhood size) across datasets. Only overlaping biological groups should have mutual nearest neighbours (see panel b below). However, this assumes that k is set to approximately the size of the smallest biological group in the datasets, but a k that is too low will identify too few mutual nearest-neighbour pairs to get a good estimate of the batch effect we want to remove.
+为了跨数据集匹配细胞，mnnCorrect使用余弦距离来避免文库大小效应，跨数据集识别mututal nearest neighbours（k确定邻居大小）。 只有重叠的生物群应该有mutual nearest neighbours（见下图b）。 然而，这假设k被设置为数据集中最小生物群的大小，但是k越小将识别太少的mutual nearest-neighbour对来对批次效应进行良好估计。
 
-Learning the biological/techncial effects is done with either singular value decomposition, similar to RUV we encounters in the batch-correction section, or with principal component analysis with the opitimized irlba package, which should be faster than SVD. The parameter `svd.dim` specifies how many dimensions should be kept to summarize the biological structure of the data, we will set it to three as we found three major groups using Metaneighbor above. These estimates may be futher adjusted by smoothing (`sigma`) and/or variance adjustment (`var.adj`).
+学习生物/技术效应的方法是使用奇异值分解，类似于批次校正部分中的RUV，或者使用优化的irlba包进行主成分分析，这比SVD快。 参数`svd.dim`指定应该保留多少维度来总结数据的生物结构，我们将它设置为三，因为使用上面的Metaneighbor发现有三个主要组。 可以通过平滑（sigma）和/或方差调整（var.adj）进一步调整这些估计。
 
-mnnCorrect also assumes you've already subset your expression matricies so that they contain identical genes in the same order, fortunately we have already done with for our datasets when we set up our data for Metaneighbor.
+mnnCorrect还假设您已经对表达式矩阵去子集，以便相同的基因具有相同的顺。当为Metaneighbor设置数据时，我们已经为数据集做了这些。
 
 ```{r, echo=FALSE, merged_seurat.width = '80%', fig.cap="mnnCorrect batch/dataset effect correction. From Haghverdi et al. 2017"}
 knitr::include_graphics("figures/mnnCorrectDiagramCropped.png")
@@ -2455,15 +2286,14 @@ require("scran")
 # mnnCorrect will take several minutes to run
 corrected <- mnnCorrect(logcounts(muraro), logcounts(segerstolpe), k=20, sigma=1, pc.approx=TRUE, subset.row=var.genes, svd.dim=3)
 ```
-First let's check that we found a sufficient number of mnn pairs, mnnCorrect returns a list of dataframe with the mnn pairs for each dataset.
+首先让我们检查一下是否找到了足够数量的mnn对，mnnCorrect返回一个数据框列表，其中包含每个数据集的mnn对。
 ```{r eval=FALSE,echo=TRUE}
 dim(corrected$pairs[[1]]) # muraro -> others
 ## [1] 0 3
 dim(corrected$pairs[[2]]) # seger -> others
 ## [1] 2533    3
 ```
-The first and second columns contain the cell column IDs and the third column contains a number indicating which dataset/batch the column 2 cell belongs to. In our case,
-we are only comparing two datasets so all the mnn pairs have been assigned to the second table and the third column contains only ones
+第一列和第二列包含细胞列ID，第三列数字代表第二列细胞属于哪个数据集/批次。在我们的例子中只比较两个数据集，因此所有mnn对都已分配给第二个表，第三个列只包含一个。
 ```{r eval=FALSE,echo=TRUE}
 head(corrected$pairs[[2]])
 ## DataFrame with 6 rows and 3 columns
@@ -2480,13 +2310,13 @@ n_unique_seger <- length(unique((corrected$pairs[[2]][,1])))
 n_unique_muraro <- length(unique((corrected$pairs[[2]][,2])))
 ```
 
-mnnCorrect found `total_pairs` sets of mutual nearest-neighbours between `n_unique_seger` segerstolpe cells and `n_unique_muraro` muraro cells. This should be a sufficient number of pairs but the low number of unique cells in each dataset suggests we might not have captured the full biological signal in each dataset.
+mnnCorrect在`n_unique_seger` segerstolpe cell和`n_unique_muraro` muraro cells之间找到了2533组mutual nearest-neighbours。 这应该是足够数量的对，但每个数据集中的独特细胞数量较少表明可能没有捕获每个数据集中的完整生物信号。
 
-__Exercise__
-Which cell-types had mnns across these datasets? Should we increase/decrease k?
+__练习__
+哪些细胞类型在这些数据集中有mnns？应该增加/减少k吗？
 
-__Answer__
-```{r, include=FALSE, eval=FALSE}
+__答案__
+```{r, echo=TRUE, eval=FALSE}
 seger_matched_cells <- unique((corrected$pairs[[2]][,1]))
 summary(factor(colData(segerstolpe)$cell_type1[seger_matched_cells]))
 
@@ -2494,7 +2324,7 @@ muraro_matched_cells <- unique((corrected$pairs[[2]][,2]))
 summary(factor(colData(muraro)$cell_type1[muraro_matched_cells]))
 ```
 
-Now we could create a combined dataset to jointly analyse these data. However, the corrected data is no longer counts and usually will contain negative expression values thus some analysis tools may no longer be appropriate. For simplicity let's just plot a joint TSNE.
+现在创建一个组合数据集来联合分析这些数据。但是，校正的数据不再是counts，通常包含负值，因此某些分析工具可能不再适用。 简单起见，绘制一个联合TSNE。
 
 ```{r eval=FALSE,echo=TRUE}
 require("Rtsne")
@@ -2511,15 +2341,15 @@ plot(joint_tsne$Y[,1], joint_tsne$Y[,2], pch=c(16,1)[dataset_labels], col=rainbo
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/projection_files/figure-html/unnamed-chunk-38-1.png")
 ```
 
-### Cannonical Correlation Analysis (Seurat)
+### 典型相关分析 (Seurat)
 
-The Seurat package contains another correction method for combining multiple datasets, called [CCA](https://www.biorxiv.org/content/early/2017/07/18/164889). However, unlike mnnCorrect it doesn't correct the expression matrix itself directly. Instead Seurat finds a lower dimensional subspace for each dataset then corrects these subspaces. Also different from mnnCorrect, Seurat only combines a single pair of datasets at a time.
+Seurat包中包含另一种用于组合多个数据集的校正方法，称为 [CCA](https://www.biorxiv.org/content/early/2017/07/18/164889)。 但是，与mnnCorrect不同，它不直接校正表达矩阵本身。相反，Seurat为每个数据集找到一个较低维度的子空间，然后校正这些子空间。 与mnnCorrect不同，Seurat一次只组合一对数据集。
 
-Seurat uses gene-gene correlations to identify the biological structure in the dataset with a method called canonical correlation analysis (CCA). Seurat learns the shared structure to the gene-gene correlations and then evaluates how well each cell fits this structure. Cells which must better described by a data-specific dimensionality reduction method than by the shared correlation structure are assumed to represent dataset-specific cell-types/states and are discarded before aligning the two datasets. Finally the two datasets are aligned using 'warping' algorithms which normalize the low-dimensional representations of each dataset in a way that is robust to differences in population density.
+Seurat通过称为典型相关分析（CCA）的方法使用基因-基因相关性识别数据集中的生物结构。Seurat学习基因-基因相关性的共享结构，然后评估每个细胞与这种结构的拟合程度。必须通过数据特异的降维方法而不是共享相关结构描述的细胞代表数据集特异的细胞类型/状态，在比对两个数据集前舍去。 最后，使用'warping'算法比对两个数据集，该算法对每个数据集的低维表示进行归一化，其对群体密度差异稳健。
 
-Note because Seurat uses up a lot of library space you will have to restart your R-session to load it, and the plots/merged_seuratput won't be automatically generated on this page.
+注意，因为Seurat占用了大量的库空间，必须重新启动R-session才能加载它，并且不会在此页面上自动生成plots / merged_seuratput。
 
-Reload the data:
+重新加载数据:
 ```{r, eval=FALSE}
 muraro <- readRDS("data/pancreas/muraro.rds")
 segerstolpe <- readRDS("data/pancreas/segerstolpe.rds")
@@ -2534,8 +2364,7 @@ rownames(muraro) <- rowData(muraro)$feature_symbol
 identical(rownames(segerstolpe), rownames(muraro))
 ```
 
-
-First we will reformat our data into Seurat objects:
+首先，将数据重新格式化为Seurat对象：
 
 ```{r, eval=FALSE}
 require("Seurat")
@@ -2548,7 +2377,7 @@ seger_seurat <- CreateSeuratObject(raw.data=assays(segerstolpe)[["counts"]])
 seger_seurat@meta.data[, "dataset"] <- 2
 seger_seurat@meta.data[, "celltype"] <- paste("s",colData(segerstolpe)$cell_type1, sep="-")
 ```
-Next we must normalize, scale and identify highly variable genes for each dataset:
+对每个数据集进行标准化，缩放和识别HGV：
 ```{r, eval=FALSE}
 muraro_seurat <- NormalizeData(object=muraro_seurat)
 muraro_seurat <- ScaleData(object=muraro_seurat)
@@ -2565,26 +2394,24 @@ knitr::include_graphics("figures/muraro_seurat_hvg.png")
 ```{r, echo=FALSE, merged_seurat.width = '80%', fig.cap="segerstolpe variable genes"}
 knitr::include_graphics("figures/seger_seurat_hvg.png")
 ```
-Eventhough Seurat corrects for the relationship between dispersion and mean expression, it doesn't use the corrected value when ranking features. Compare the results of the command below with the results in the plots above:
-
+尽管Seurat校正了离散程度和表达均值之间的关系，对特征进行排名时也不使用校正值。将以下命令的结果与上图中的结果进行比较：
 ```{r, eval=FALSE}
 head(muraro_seurat@hvg.info, 50)
 head(seger_seurat@hvg.info, 50)
 ```
 
-But we will follow their example and use the top 2000 most dispersed genes withmerged_seurat correcting for mean expression from each dataset anyway.
+按照他们的例子使用前2000个最分散的基因并用merged_seurat来校正每个数据集的表达均值。
 
-```{r, eval=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 gene.use <- union(rownames(x = head(x = muraro_seurat@hvg.info, n = 2000)),
                   rownames(x = head(x = seger_seurat@hvg.info, n = 2000)))
 
 ```
 
-__Exercise__
-Find the features we would use if we selected the top 2000 most dispersed after scaling by mean. (Hint: consider the `order` function)
-
-__Answer__
-```{r, include=FALSE, eval=FALSE}
+__练习__
+如果选择按均值缩放后top2000的特征，这些特征是什么？
+__答案__
+```{r, echo=TRUE, eval=FALSE}
 seger_hvg <- seger_seurat@hvg.info
 seger_hvg <- seger_hvg[order(seger_hvg[,3], decreasing=TRUE),]
 muraro_hvg <- seger_seurat@hvg.info
@@ -2593,20 +2420,21 @@ muraro_hvg <- muraro_hvg[order(muraro_hvg[,3], decreasing=TRUE),]
 gene.use.scaled <- union(rownames(seger_hvg[1:2000,]), rownames(muraro_hvg[1:2000,]))
 ```
 
-Now we will run CCA to find the shared correlation structure for these two datasets:
+运行CCA来查找这两个数据集的共享相关结构：
 
-Note to speed up the calculations we will be using only the top 5 dimensions but ideally you would consider many more and then select the top most informative ones using `DimHeatmap`.
+请注意，为了加快计算速度，我们将仅使用前5个维度，但理想情况下，您会考虑更多，然后使用`DimHeatmap`选择信息最丰富的维度。
 
-```{r, eval=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 merged_seurat <- RunCCA(object=muraro_seurat, object2=seger_seurat, genes.use=gene.use, add.cell.id1="m", add.cell.id2="s", num.cc = 5)
 DimPlot(object = merged_seurat, reduction.use = "cca", group.by = "dataset", pt.size = 0.5) # Before correcting
 ```
 ```{r, echo=FALSE, merged_seurat.width = '80%', fig.cap="Before Aligning"}
 knitr::include_graphics("figures/cca_before.png")
 ```
-To identify dataset specific cell-types we compare how well cells are 'explained' by CCA vs dataset-specific principal component analysis.
 
-```{r, eval=FALSE}
+为了识别特定于数据集的细胞类型，我们比较了CCA与特定数据集主成分分析"解释"细胞的程度。
+
+```{r, eval=FALSE,echo=TRUE}
 merged_seurat <- CalcVarExpRatio(object = merged_seurat, reduction.type = "pca", grouping.var = "dataset", dims.use = 1:5)
 merged.all <- merged_seurat
 merged_seurat <- SubsetData(object=merged_seurat, subset.name="var.ratio.pca", accept.low = 0.5) # CCA > 1/2 as good as PCA
@@ -2614,9 +2442,9 @@ merged.discard <- SubsetData(object=merged.all, subset.name="var.ratio.pca", acc
 
 summary(factor(merged.discard@meta.data$celltype)) # check the cell-type of the discarded cells.
 ```
-Here we can see that despite both datasets containing endothelial cells, almost all of them have been discarded as "dataset-specific". Now we can align the datasets:
+在这里我们可以看到，尽管两个数据集都包含内皮细胞，但几乎都作为"dataset-specific"被丢弃。下面比对数据集：
 
-```{r, eval=FALSE}
+```{r, eval=FALSE,echo=TRUE}
 merged_seurat <- AlignSubspace(object = merged_seurat, reduction.type = "cca", grouping.var = "dataset", dims.align = 1:5)
 DimPlot(object = merged_seurat, reduction.use = "cca.aligned", group.by = "dataset", pt.size = 0.5) # After aligning subspaces
 ```
@@ -2625,11 +2453,11 @@ DimPlot(object = merged_seurat, reduction.use = "cca.aligned", group.by = "datas
 knitr::include_graphics("figures/cca_after.png")
 ```
 
-__Exercise__
-Compare the results for if you use the features after scaling dispersions.
+__练习__
+比较使用离散程度缩放的特征结果
 
-__Answer__
-```{r, eval=FALSE, include=FALSE}
+__答案__
+```{r, eval=FALSE, echo=TRUE}
 merged_seurat <- RunCCA(object=muraro_seurat, object2=seger_seurat, genes.use=gene.use.scaled, add.cell.id1="m", add.cell.id2="s", num.cc = 5)
 merged_seurat <- AlignSubspace(object = merged_seurat, reduction.type = "cca", grouping.var = "dataset", dims.align = 1:5)
 DimPlot(object = merged_seurat, reduction.use = "cca.aligned", group.by = "dataset", pt.size = 0.5) # After aligning subspaces
@@ -2639,11 +2467,10 @@ knitr::include_graphics("figures/cca_after2.png")
 ```
 
 
-__Advanced Exercise__
-Use the clustering methods we previously covered on the combined datasets. Do you identify any novel cell-types?
+__进阶练习__
+使用我们之前在组合数据集上介绍的聚类方法。是否发现任何新型细胞类型？
 
-
-## Search scRNA-Seq data
+## 检索scRNA-seq数据
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 library(scfind)
@@ -2654,25 +2481,25 @@ set.seed(1234567)
 
 ### About 
 
-`scfind` is a tool that allows one to search single cell RNA-Seq collections (Atlas) using lists of genes, e.g. searching for cells and cell-types where a specific set of genes are expressed. `scfind` is a [Github package](https://github.com/hemberg-lab/scfind). Cloud implementation of `scfind` with a large collection of datasets is available on our [website](https://scfind.sanger.ac.uk/).
+`scfind`是可以使用基因列表搜索单细胞RNA-Seq集合（Atlas）的工具，寻找表达特定基因集表达的细胞和细胞类型。`scfind`是一个[Github包]((https://github.com/hemberg-lab/scfind))。 [网站](https://scfind.sanger.ac.uk/)提供了包含大量数据集的`scfind`云版本。
 
 ```{r, echo = FALSE, out.width = '80%', fig.cap="scfind can be used to search large collection of scRNA-seq data by a list of gene IDs."}
 knitr::include_graphics("figures/scfind.png")
 ```
 
-### Dataset
+### 数据集
 
-We will run `scfind` on the Tabula Muris 10X dataset. `scfind` also operates on `SingleCellExperiment` class:
-```{r, message=FALSE, warning=FALSE}
+在Tabula Muris 10X数据集上运行`scfind`。` scfind`还在`SingleCellExperiment`类上运行：
+```{r, message=FALSE, warning=FALSE,echo=TRUE}
 tm10x_heart <- readRDS("data/sce/Heart_10X.rds")
 tm10x_heart
 colData(tm10x_heart)
 ```
 
-### Gene Index
+### 基因索引
 
-Now we need to create a gene index using our dataset:
-```{r}
+使用数据集创建基因索引：
+```{r,echo=TRUE}
 heart_index <- buildCellTypeIndex(
   sce = tm10x_heart,
   assay.name = "counts",
@@ -2681,13 +2508,13 @@ heart_index <- buildCellTypeIndex(
 )
 ```
 
-`scfind` adopts a two-step compression strategy which allows efficient compression of large cell-by-gene matrix and allows fast retrieval of data by gene query. We estimated that one can achieve 2 orders of magnitude compression with this method.
+`scfind`采用两步压缩策略，有效压缩大型cell-by-gene矩阵，并允许通过基因查询快速检索数据。估计用这种方法可以达到2个数量级的压缩。
 
-The input matrix for indexing is the raw count matrix of the `SingleCellExperiment` class. By default the `cell_type1` column of the `colData` slot of the `SingleCellExperiment` object is used to define cell types, however it can also be defined manually using the `cell.type.label` argument of the `buildCellTypeIndex`. For dataset with more than one tissue, you can also merge all tissues together to create a super index using the function `mergeDataset`.
+索引的输入矩阵是`SingleCellExperiment`类的原始count矩阵。 默认情况下，`SingleCellExperiment`对象的`colData`的`cell_type1`列用于定义细胞类型，但也可以使用`buildCellTypeIndex`的`cell.type.label`参数手动定义。对于具有多个组织的数据集，还可以使用函数`mergeDataset`将所有组织合并在一起以创建超级索引。
 
-The index can be saved in .rds format using `saveObject` function and loaded using `loadObject` function for future use.
+索引可以使用`saveObject`函数以.rds格式保存，并使用`loadObject`函数加载以备将来使用。
 
-```{r}
+```{r,echo=TRUE}
 tm10x_thymus <- readRDS("data/sce/Thymus_10X.rds")
 thymus_index <- buildCellTypeIndex(
   sce = tm10x_thymus, 
@@ -2702,25 +2529,25 @@ cellTypeNames(scfind_index)
 sample(scfindGenes(scfind_index),20)
 ```
 
-
+使用交互式Shiny快速找到细胞类型，使用如下命令：
 To quickly and easily find the enriched cell type using an interactive Shiny application use the following method:
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 scfindShiny(scfind_index)
 ```
 
 
-### Marker genes
+### Marker基因
 
-Now let's find the marker genes for Thymus T cell in the datasets
-```{r}
+在数据集中找到Thymus T细胞的标记基因
+```{r,echo=TRUE}
 # Showing the top 5 marker genes for each cell type and sort by F1 score.
 t_cell_markers <- cellTypeMarkers(scfind_index, cell.types = "Thymus.T cell", top.k = 5, sort.field = "f1") 
 
 t_cell_markers
 ```
 
-Next, you can evaluate the markers of Thymus T cell in Thymus stromal cell
-```{r}
+评估Thymus stromal细胞中Thymus T cell的marker
+```{r,echo=TRUE}
 evaluateMarkers(
   scfind_index, 
   gene.list = as.character(t_cell_markers$genes), 
@@ -2729,7 +2556,7 @@ evaluateMarkers(
 )
 ```
 
-```{r}
+```{r,echo=TRUE}
 # By default, the marker evaluation takes all cell types in the dataset as background cell type, but you can use the argument `background.cell.types` to fine tune the evaluation
 
 background <- cellTypeNames(scfind_index, datasets = "Thymus")
@@ -2745,10 +2572,11 @@ evaluateMarkers(
 ```
 
 
-### Search cells by a gene list
+### 搜索基因列表
 
-`scfind` can instantly identify the cell type that best represents the genes of interest from large single cell dataset. We will use the marker genes identified in an original publication [Yanbin et al. 2015](https://www.nature.com/articles/cr201599). Cardiomyocyte-specific markers used in immunostaining as shown in Figure 1. 
-```{r}
+`scfind`可以快速从大型单细胞数据集中识别出最能代表感兴趣基因的细胞类型。我们使用文献 [Yanbin et al. 2015](https://www.nature.com/articles/cr201599)鉴定的标记基因。
+用于免疫染色的心肌细胞特异性标志物如图1所示。
+```{r,echo=TRUE}
 cardiomyocytes <- c("Mef2c", "Gata4", "Nkx2.5", "Myh6", "tnnt2", "tnni3", "CDH2", "Cx43", "GJA1") 
 result <- markerGenes(
   scfind_index, 
@@ -2757,10 +2585,8 @@ result <- markerGenes(
 result
 ```
 
-
-To allow search of enriched cell type from a long list of gene query, `scfind` features a query optimization routin. First, the function `markerGenes` will counter suggest subqueries that with the highest support in the dataset. The TF-IDF score for each gene set allows user to identify the best subquery for finding the most relevant cell type. 
-
-```{r}
+为了允许从基因列表查询搜索富集的细胞类型，`scfind`使用查询优化程序。首先，函数`markerGenes`将统计在数据集中具有最高支持度的子查询。 每个基因集的TF-IDF得分允许用户识别最佳子查询以找到最相关的细胞类型。
+```{r,echo=TRUE}
 best_subquery <- result[which.max(result$tfidf),] # get the best subquery by ranking TF-IDF score
 best_subquery <- strsplit(as.character(best_subquery$Query), ",")[[1]] # obtain gene list
 hyperQueryCellTypes(
@@ -2769,14 +2595,13 @@ hyperQueryCellTypes(
 )
 ```
 
-`hyperQueryCellTypes` function returns a list of p-values corresponding to all cell types in a given dataset. It also outputs a list of cells in which genes from the given gene list are co-expressed. 
+`hyperQueryCellTypes`函数返回与给定数据集中的所有细胞类型对应的p值列表。它还输出一组细胞，其基因与列表中基因共表达。
 
+__练习1__
 
-__Exercise 1__
+在Heart数据集中查找所有细胞类型的标记基因
 
-Find the marker genes of all cell types in the Heart dataset
-
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 heart_cell_types <- cellTypeNames(scfind_index, "Heart")
 
 for(cell_type_name in heart_cell_types)
@@ -2790,15 +2615,15 @@ for(cell_type_name in heart_cell_types)
 }
 ```
 
-```{r}
+```{r,echo=TRUE}
 cardiac_contractility <- c("Ace2","Fkbp1b","Gh","Cacna1c","Cd59b","Ppp1r1a","Tnnt2","Nos1","Agtr1a","Camk2g","Grk2","Ins2","Dnah8","Igf1","Nos3","Nppa","Nppb","Il6","Myh6","Ren2","Tnni3","Apln","Kcnmb1","Pik3cg","Prkca","Aplnr","Slc8a1","Ace","Akt1","Edn1","Kcnmb2","Nos2","Tnf","Myh14","Adrb2","Agt","Adrb1","Atp2a2","Ryr2","Pln")
 ```
 
-__Exercise 2__
+_练习2__
 
-Input the gene list relevant to "cardiac contractility" and find the best gene set with the highest support. Identify the enriched cell type for this query. 
+输入与“心肌收缩力”相关的基因列表，找到具有最高支持度的最佳基因组。识别此查询富集的细胞类型。
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 result <- markerGenes(scfind_index, cardiac_contractility)
 best_sub_query <- as.character(result[which.max(result$tfidf), c("Query")])
 best_sub_query <- strsplit(best_sub_query, ",")[[1]]
@@ -2807,10 +2632,10 @@ hyperQueryCellTypes(scfind_index, best_sub_query)
 
 ### In-silico gating
 
-Using the `findCellTypes` function, you can perform in-silico gating to identify cell type subsets as if the way cell sorting works.
-To do so, you can add logical operators including "-" and "*" for "no" and "intermediate" expression, respectively in front of the gene name. Here, we use operators to subset T cell of the Thymus dataset into effector T regulatory cells and effector memory T cell.
+使用`findCellTypes`函数，可以执行in-silico gating以识别细胞类型子集，类似细胞排序。 在基因名称前面分别加上逻辑运算符，包括"-","*","no"和"intermediate"表达式。 在这里，我们使用运算符将Thymus数据集的T细胞分为效应T调节细胞和效应记忆T细胞子集。
 
-```{r}
+
+```{r,echo=TRUE}
 effector_t_reg_cells <- c("*Ptprc", "-Il7r", "Ctla4", "-Il7r")
 effector_memory_t_cells <- c("-Il2ra", "*Ptprc", "Il7r")
 
@@ -2820,8 +2645,8 @@ subset_tmem <- findCellTypes(scfind_index, effector_memory_t_cells, "Thymus")
 subset_treg
 subset_tmem
 ```
-Let's use the TSNE plot information from the `SingleCellExperiment` of Thymus to illustrate the gating result
-```{r}
+使用来自Thymus的`SingleCellExperiment`的TSNE图信息来展示gating结果。
+```{r,echo=TRUE}
 map <- data.frame(
   tm10x_thymus@reducedDims[['TSNE']], 
   cell_type = as.character(colData(tm10x_thymus)$cell_type1), 
@@ -2841,6 +2666,6 @@ plot_ly(map, x = ~X1 , y = ~X2, type="scatter", color = ~cell_type)
 
 ### sessionInfo()
 
-```{r}
+```{r,echo=TRUE}
 sessionInfo()
 ```
