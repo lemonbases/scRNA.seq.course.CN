@@ -43,8 +43,8 @@ knitr::include_graphics("figures/Pipeline-batches.png")
     * [FASTQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [cutadapt](http://cutadapt.readthedocs.io/en/stable/index.html)
     
 * 比对
-    * 小数据集或UMI数据集: 使用[STAR](https://github.com/alexdobin/STAR)比对到基因组/转录组
-    * 大数据集:使用[Salmon](http://salmon.readthedocs.io/en/latest/salmon.html)或[kallisto](https://pachterlab.github.io/kallisto/about)进行pseudo-alignment
+    * 小数据集或UMI数据集: 使用 [STAR](https://github.com/alexdobin/STAR)比对到基因组/转录组
+    * 大数据集:使用 [Salmon](http://salmon.readthedocs.io/en/latest/salmon.html)或 [kallisto](https://pachterlab.github.io/kallisto/about)进行pseudo-alignment
   
 * 定量
     * 小数据集，不是UMIs : [featureCounts](http://subread.sourceforge.net/)
