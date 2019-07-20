@@ -441,7 +441,7 @@ FeaturePlot(object = pbmc, features = c("S100A4", "CCR7"), cols = c("green", "bl
 knitr::include_graphics("https://scrnaseq-course.cog.sanger.ac.uk/website/seurat_files/figure-html/unnamed-chunk-37-1.png")
 ```
 
-memory/naive有点弱，可以查看更多细胞看看这是否更有说服力。与此同时，我们可以恢复原来cluster identities以进行下游处理。
+memory/naive划分有点弱，可以查看更多细胞看看这是否更有说服力。与此同时，我们可以恢复原来cluster identities以进行下游处理。
 
 ```{r,eval=FALSE,echo=TRUE}
 pbmc <- SetIdent(object = pbmc, value = "ClusterNames_0.6")
