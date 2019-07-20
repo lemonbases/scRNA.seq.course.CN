@@ -12,7 +12,7 @@ output: html_document
 * [UMI](http://www.nature.com/nmeth/journal/v11/n2/abs/nmeth.2772.html)
 * [STRT-Seq](http://www.ncbi.nlm.nih.gov/pubmed/21543516)
 
-## External RNA Control Consortium (ERCC)
+## External RNA Control Consortium (ERCC) {#ERCC}
 
 [ERCCs](https://www.thermofisher.com/order/catalog/product/4456740)
 
@@ -26,6 +26,6 @@ Tallulah Andrews的单细胞分析脚本:
 
 * [scRNASeqPipeline](https://github.com/tallulandrews/scRNASeqPipeline)
 
-## scRNA-seq公共数据集
+## scRNA-seq公共数据集 {#scRNA-seq-public-datasets}
 
-* [Hemberg group's公共数据集](https://hemberg-lab.github.io/scRNA.seq.datasets/)
+* [Hemberg实验室公共数据集](https://hemberg-lab.github.io/scRNA.seq.datasets/)
