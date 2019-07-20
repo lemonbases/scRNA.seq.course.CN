@@ -2,30 +2,30 @@
 output: html_document
 ---
 
-# Advanced exercises
+# 进阶练习 {#Advanced-exercises}
 
-For the final part of the course we would like you to work on more open ended problems. The goal is to carry out the type of analyses that you would be doing for an actual research project. 
+对于课程的最后部分，我们希望您能够解决更多开放式问题，执行您将为实际研究项目所做的分析类型。
 
-Participants who have their own dataset that they are interested in should feel free to work with them. 
+拥有自己数据集的参与者可以随意使用它们。
 
-For other participants we recommend downloading a dataset from the [conquer](http://imlspenticton.uzh.ch:3838/conquer/) resource (<b>co</b>nsistent <b>qu</b>antification of <b>e</b>xternal <b>r</b>na-seq data). [conquer](http://imlspenticton.uzh.ch:3838/conquer/) uses [Salmon](http://salmon.readthedocs.io/en/latest/salmon.html) to quantify the transcript abundances in a given sample. For a given organism, the fasta files containing cDNA and ncRNA sequences from Ensembl are complemented with ERCC spike-in sequences, and a Salmon quasi-mapping index is built for the entire catalog. Then [Salmon](http://salmon.readthedocs.io/en/latest/salmon.html) is run to estimate the abundance of each transcript. The abundances estimated by [Salmon](http://salmon.readthedocs.io/en/latest/salmon.html) are summarised and provided to the user in the form of a `MultiAssayExperiment` object. This object can be downloaded via the buttons in the _MultiAssayExperiment_ column. The provided `MultiAssayExperiment` object contains two "experiments", corresponding to the gene-level and transcript-level values.
+对于其他参与者，建议从 [conquer](http://imlspenticton.uzh.ch:3838/conquer/)(<b>co</b>nsistent <b>qu</b>antification of <b>e</b>xternal <b>r</b>na-seq data)中下载数据集（外部rna-seq数据的一致量化）。 [conquer](http://imlspenticton.uzh.ch:3838/conquer/)使用 [Salmon](http://salmon.readthedocs.io/en/latest/salmon.html)定量给定样本中的转录本丰度。 对于给定物种，fasta文件含有来自Ensembl的cDNA和ncRNA序列的与ERCC spike-in 互补序列，并且为整个目录构建Salmon quasi-mapping索引。 然后运行 [Salmon](http://salmon.readthedocs.io/en/latest/salmon.html)来估计每个转录本的丰度。 [Salmon](http://salmon.readthedocs.io/en/latest/salmon.html)估计的转录本了丰度汇总并以`MultiAssayExperiment`对象的形式提供给用户。 可以通过 _MultiAssayExperiment_列中的按钮下载此对象。提供的`MultiAssayExperiment`对象包含两个“实验”，对应于基因水平和转录水平表达值。
 
-The gene-level experiment contains four "assays":
+基因水平实验包含4个部分:
 
 * TPM
 * count
 * count_lstpm (count-scale length-scaled TPMs)
-* avetxlength (the average transcript length, which can be used as offsets in count models based on the count assay, see [here](http://f1000research.com/articles/4-1521/)).
+* avetxlength (平均转录本长度, 见[here](http://f1000research.com/articles/4-1521/)).
 
-The transcript-level experiment contains three "assays":
+转录水平包含3个部分:
 
 * TPM
 * count
-* efflength (the effective length estimated by [Salmon](http://salmon.readthedocs.io/en/latest/salmon.html))
+* efflength ([Salmon](http://salmon.readthedocs.io/en/latest/salmon.html)估计的有效长度)
 
-The `MultiAssayExperiment` also contains the phenotypic data (in the `colData` slot), as well as some metadata for the data set (the genome, the organism and the Salmon index that was used for the quantification).
+`MultiAssayExperiment`还包含表型数据（colData中），以及数据集的一些元数据（基因组，物种和用于定量的Salmon索引）。
 
-Here we will show you how to create an `SCE` from a `MultiAssayExperiment` object. For example, if you download `Shalek2013` dataset you will be able to create an `SCE` using the following code:
+在这里，我们将向您展示如何从`MultiAssayExperiment`对象创建`SCE`。 例如，如果下载`Shalek2013`数据集，则可以使用以下代码创建`SCE`：
 
 ```{r, message=FALSE, warning=FALSE, eval=FALSE}
 library(MultiAssayExperiment)
@@ -44,20 +44,20 @@ sce <- SingleCellExperiment(
 )
 ```
 
-You can also see that several different QC metrics have already been pre-calculated on the [conquer](http://imlspenticton.uzh.ch:3838/conquer/) website.
+在 [conquer](http://imlspenticton.uzh.ch:3838/conquer/)网站上可以看到预先计算了几个不同的QC指标。
 
-Here are some suggestions for questions that you can explore:
+以下是您可以探索的一些问题建议：
 
-* There are two mESC datasets from different labs (i.e. `Xue` and `Kumar`). Can you merge them and remove the batch effects?
+* 来自不同实验室的两个mESC数据集（比如`Xue`和`Kumar`）。如何合并并删除批次效应吗？
 
-* Clustering and pseudotime analysis look for different patterns among cells. How might you tell which is more appropriate for your dataset?
+* 聚类和伪时间分析寻找细胞之间的不同模式。哪个更适合你的数据集？
 
-* One of the main challenging in hard clustering is to identify the appropriate value for `k`. Can you use one or more of the clustering tools to explore the different hierarchies available? What are good mathematical and/or biological criteria for determining `k`?
+* 聚类的主要挑战之一是确定`k`的值。是否可以使用一个或多个聚类工具来探索细胞的不同层次结构？ 什么是确定`k`的数学和/或生物学黄金标准？
 
-* The choice of normalization strategy matters, but how do you determine which is the best method? Explore the effect of different normalizations on downstream analyses.
+* 标准化策略的选择很重要，但是如何确定哪种方法最好？ 探索不同标准化对下游分析的影响。
 
-* scRNA-seq datasets are high-dimensional and since most dimensions (ie genes) are not informative. Consequently, dimensionality reduction and feature selection are important when analyzing and visualizing the data. Consider the effect of different feature selection methods and dimensionality reduction on clustering and/or pseudotime inference.
+* scRNA-seq数据集是高维的，但大多数维度（比如基因）都没有信息。因此，在分析和可视化数据时，降维和特征选择非常重要。 考虑不同特征选择和降维方法对聚类和伪时间分析的影响。
 
-* One of the main challenges after clustering cells is to interpret the biological relevance of the subpopulations. One approach is to identify [gene ontology](http://geneontology.org/) terms that are enriched for the set of marker genes. Identify marker genes (e.g. using `SC3` or `M3Drop`) and explore the ontology terms using [gProfiler](http://biit.cs.ut.ee/gprofiler/), [WebGestalt](http://www.webgestalt.org/) or [DAVID](https://david.ncifcrf.gov/).
+* 聚类后的主要挑战之一是解释亚群的生物相关性。一种方法是识别marker基因富集的[gene ontology](http://geneontology.org/)条目。 识别标记基因（例如使用`SC3`或`M3Drop`）并使用[gProfiler](http://biit.cs.ut.ee/gprofiler/)，[WebGestalt](http://www.webgestalt.org/)或[DAVID](https://david.ncifcrf.gov/)进行富集分析。
 
-* Similarly, when ordering cells according to pseudotime we would like to understand what underlying cellular processes are changing over time. Identify a set of changing genes from the aligned cells and use ontology terms to characterize them.
+* 类似地，当根据伪时间对细胞进行排序时，我们想要了解随时间变化的细胞过程。从比对的细胞中识别一组变化的基因，并使用GO item来表征它们。
