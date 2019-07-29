@@ -151,7 +151,7 @@ bedtools bamtofastq -i primary_alignment_only.bam -fq read1.fq -fq2 read2.fq
 
 ### CRAM
 
-[CRAM](https://www.ebi.ac.uk/ena/software/cram-usage)文件类似SAM文件，其头部信息包括比对使用的参考基因组信息，这使得read中和参考基因组一样的碱基可以进一步压缩。与BAM相比，CRAM还支持有损数据压缩方法以进一步优化存储。CRAM主要由Sanger/EBI测序机构使用。
+[CRAM](https://www.ebi.ac.uk/ena/software/cram-usage)文件类似SAM文件，其头部信息包括比对过程中使用的参考基因组信息，这使得read中和参考基因组一样的碱基可以得到进一步压缩。与BAM相比，CRAM还支持有损数据压缩的方法以进一步优化存储。CRAM主要由Sanger/EBI测序机构使用。
 
 CRAM和BAM文件可以使用最新版本的samtools（> = v1.0）进行格式转换。但是，这种转换可能需要将参考基因组下载到缓存中。 或者，您可以从CRAM文件的头部元数据预先下载参考基因组，或者询问生成CRAM文件的人获得参考基因组，并使用'-T'指定该文件。因此我们建议在执行此操作之前设置特定的缓存位置：
 
@@ -270,7 +270,7 @@ foreach my $line (@GTFlines) {
 
 ## 测序文库拆分
 
-文库拆分根据Protocol不同或构建的流程不同需要有对应的处理方式。我们所知道的最灵活的文库拆分工具是[zUMIs](https://github.com/sdparekh/zUMIs/wiki/Usage)，可用于拆分和比对大多数基于UMI的protocol。对于Smartseq2或其他全长转录本双端测序protocol，数据通常已经被拆分好。诸如GEO或ArrayExpress之类的公共存储库需要在上传之前对基于小规模/基于板的scRNASeq数据拆分，并且许多测序公司在数据返回给您之前自动拆分数据。如果您没有使用已发表的流程，并且数据未被测序公司拆分，则您必须自己对其进行文库拆分。因为不同的建库方案引入的barcode序列的长度和位置不同，通常都需要自己写脚本解决。
+文库拆分根据Protocol不同或构建的流程不同而需要有对应的处理方式。我们所知道最灵活的文库拆分工具是[zUMIs](https://github.com/sdparekh/zUMIs/wiki/Usage)，可用于拆分和比对大多数基于UMI的protocol。对于Smartseq2或其他全长转录本双端测序protocol，数据通常已经被拆分好。而诸如GEO或ArrayExpress之类的公共存储库则需要在上传之前对基于小规模/基于板的scRNASeq数据进行拆分，并且许多测序公司在数据返回给您之前会进行拆分数据。如果您没有使用已发表的流程，并且数据未被测序公司拆分，则您必须自己对其进行文库拆分。因为不同的建库方案引入的barcode序列的长度和位置不同，通常都需要自己写脚本解决。
 
 对于所有数据类型，文库拆分涉及从一端或双端短序列中识别并移除细胞条形码序列(cell-barcode)。如果提前知道加入的cell-barcodes，比如数据来自基于PCR板的protocol，需要将每个cell-barcode与预期的cell-barcode进行比对，并将其归类于最相近的cell-barcode(根据cell-barcode的设计，一般允许最多1-2错配)。这些数据通常在比对之前进行拆分，从而可以并行比对。
 
@@ -449,7 +449,7 @@ c(TPR, Recall)
 
 现在我们已经对测序数据进行质控，并且获得了高质量的清洗后数据，下一步将其比对到参考基因组上。如果我们想要定量基因表达或筛选样品间差异表达的基因，则通常需要某种形式的比对。
 
-短序列比对的工具有很多，目前我们主要关注两个。第一个工具是STAR [@dobin2013star]，对于测序数据中的每一个read，STAR尝试寻找参考基因组中一个或多个最长可能序列。例如，下图所示，read(蓝色)跨越两个外显子和一个可变剪切位点(紫色)。STAR能够找出read的第一部分和序列的第一个外显子仙童，同时第二部分和序列的第二个外显子相同。因为STAR可能够以这种方式识别剪切事件，又被称为"spice aware alinger"。
+短序列比对的工具有很多，目前我们主要关注两个。第一个工具是STAR [@dobin2013star]，对于测序数据中的每一个read，STAR尝试寻找参考基因组中一个或多个最长可能序列。例如，下图所示，read(蓝色)跨越两个外显子和一个可变剪切位点(紫色)。STAR能够找出read的第一部分和序列的第一个外显子相同，同时第二部分和序列的第二个外显子相同。因为STAR能够以这种方式识别剪切事件，又被称为"spice aware alinger"。
 
 ```{r, out.width = '80%', fig.cap="STAR比对示意图, 来自Dobin et al.",fig.align='center',echo=FALSE}
 knitr::include_graphics("figures/STAR_explanation.png")
@@ -503,7 +503,7 @@ knitr::include_graphics("figures/Kmers.png")
 ### 为什么比对k-mer而不是reads?
 主要有两个原因：
 
-1. psudi-aligners使用计算技巧使得比对k-mers比传统比对reads要快，具体细节参考(Bray et al., 2017)
+1. psudi-aligners使用计算技巧使得比对k-mers相较传统的比对reads要快，具体细节参考(Bray et al., 2017)
 
 2. 在一些情况下，pseudo-aligners比对传统的比对工具更好地处理测序错误。比如，假设序列的第一个碱基存在测序错误，实际为T但是测序为A，这会影响pseduo-aligners比对第一个7-mer，而不影响后面7-mers的比对。
 
